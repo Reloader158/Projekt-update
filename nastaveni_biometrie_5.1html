@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nastavení biometrie</title>
+<style>
+  :root{
+    --blue:#2f74db;
+    --divider:#eee;
+    --bg:#f6f7fb;
+    --card:#fff;
+    --switch-on:#ff7b00;
+    --muted:#60646c;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg);
+    color:#111;
+  }
+  .page{max-width:480px;margin:0 auto;padding:12px}
+  .card{
+    background:var(--card);
+    border-radius:16px;
+    box-shadow:0 4px 18px rgba(0,0,0,.06);
+    padding:18px;
+    margin:12px 0;
+  }
+  h1{font-size:34px;margin:6px 6px 12px}
+  .section-title{font-size:22px;margin:6px 0 18px}
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 4px;
+    border-bottom:1px solid var(--divider);
+  }
+  .row:last-child{border-bottom:none}
+  .label{font-size:17px;font-weight:600}
+  .sub{font-size:13px;color:var(--muted);margin-top:4px}
+
+  /* iOS-like switch */
+  .switch{
+    position:relative;
+    width:48px;height:28px;
+    flex:0 0 auto;
+  }
+  .switch input{opacity:0;width:0;height:0}
+  .slider{
+    position:absolute;inset:0;
+    background:#ccc;
+    border-radius:28px;
+    transition:.3s;
+  }
+  .slider:before{
+    content:"";
+    position:absolute;
+    width:22px;height:22px;
+    left:3px;top:3px;
+    background:#fff;
+    border-radius:50%;
+    box-shadow:0 1px 2px rgba(0,0,0,.25);
+    transition:.3s;
+  }
+  .switch input:checked + .slider{background:var(--switch-on)}
+  .switch input:checked + .slider:before{transform:translateX(20px)}
+
+  /* iOS alert modal */
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.25);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:50;
+  }
+  .alert{
+    width:min(420px,100%);
+    background:#fff;
+    border-radius:22px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+    overflow:hidden;
+  }
+  .alert-body{
+    padding:22px 18px 16px;
+    text-align:center;
+  }
+  .alert-title{
+    font-weight:700;
+    font-size:20px;
+    line-height:1.25;
+    margin-bottom:10px;
+  }
+  .alert-text{
+    color:#111;
+    font-size:16px;
+    line-height:1.35;
+    opacity:.85;
+  }
+  .alert-actions{
+    display:flex;
+    border-top:1px solid #e8e8ed;
+  }
+  .alert-btn{
+    flex:1;
+    padding:14px 8px;
+    text-align:center;
+    font-size:18px;
+    color:#0a62ff;
+    background:#fff;
+    border:none;
+    cursor:pointer;
+  }
+  .alert-btn + .alert-btn{border-left:1px solid #e8e8ed}
+
+  /* tlačítko Zpět */
+  .back-btn{
+    width:100%;
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:26px;
+    font-size:18px;
+    font-weight:600;
+    padding:14px;
+    margin-top:16px;
+    box-shadow:0 6px 16px rgba(47,116,219,.25);
+    cursor:pointer;
+    transition:background .25s;
+  }
+  .back-btn:hover{background:#2867c5}
+  .back-btn:active{background:#1f58a9}
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1>Nastavení bezpečnosti</h1>
+
+    <div class="card">
+      <div class="section-title">Nastavení biometrie</div>
+
+      <div class="row">
+        <div>
+          <div class="label">Povolit použití Face ID</div>
+          <div class="sub">Aplikace může využívat Face ID pro ověřování</div>
+        </div>
+        <label class="switch">
+          <input id="faceSwitch" type="checkbox">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Povolit použití otisku prstu</div>
+          <div class="sub">Aplikace může využívat otisk prstu pro ověřování</div>
+        </div>
+        <label class="switch">
+          <input id="touchSwitch" type="checkbox">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Nové tlačítko -->
+    <button class="back-btn" id="btnBack">Zpět</button>
+  </div>
+
+  <!-- Face ID alert -->
+  <div id="faceAlert" class="overlay" role="dialog" aria-modal="true">
+    <div class="alert">
+      <div class="alert-body">
+        <div class="alert-title">Chcete aplikaci „Rychlá Peněženka“ povolit používat Face ID?</div>
+        <div class="alert-text">
+          Tato aplikace žádá o povolení využívat Face ID pro ověřování.
+        </div>
+      </div>
+      <div class="alert-actions">
+        <button class="alert-btn" id="denyFace">Nepovolit</button>
+        <button class="alert-btn" id="allowFace">Povolit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Touch ID alert -->
+  <div id="touchAlert" class="overlay" role="dialog" aria-modal="true">
+    <div class="alert">
+      <div class="alert-body">
+        <div class="alert-title">Chcete aplikaci „Rychlá Peněženka“ povolit používat otisk prstu?</div>
+        <div class="alert-text">
+          Tato aplikace žádá o povolení využívat otisk prstu pro ověřování.
+        </div>
+      </div>
+      <div class="alert-actions">
+        <button class="alert-btn" id="denyTouch">Nepovolit</button>
+        <button class="alert-btn" id="allowTouch">Povolit</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const faceSwitch = document.getElementById('faceSwitch');
+  const touchSwitch = document.getElementById('touchSwitch');
+  const faceAlert = document.getElementById('faceAlert');
+  const touchAlert = document.getElementById('touchAlert');
+  const backBtn = document.getElementById('btnBack');
+
+  // otevři dialog při zapnutí
+  faceSwitch.addEventListener('change', (e)=>{
+    if(e.target.checked){
+      e.target.checked = false;
+      faceAlert.style.display = 'flex';
+    }
+  });
+  touchSwitch.addEventListener('change', (e)=>{
+    if(e.target.checked){
+      e.target.checked = false;
+      touchAlert.style.display = 'flex';
+    }
+  });
+
+  // Face ID dialog akce
+  document.getElementById('denyFace').addEventListener('click', ()=>{
+    faceAlert.style.display = 'none';
+    faceSwitch.checked = false;
+  });
+  document.getElementById('allowFace').addEventListener('click', ()=>{
+    faceAlert.style.display = 'none';
+    faceSwitch.checked = true;
+  });
+
+  // Touch ID dialog akce
+  document.getElementById('denyTouch').addEventListener('click', ()=>{
+    touchAlert.style.display = 'none';
+    touchSwitch.checked = false;
+  });
+  document.getElementById('allowTouch').addEventListener('click', ()=>{
+    touchAlert.style.display = 'none';
+    touchSwitch.checked = true;
+  });
+
+  // Zpět
+  backBtn.addEventListener('click', ()=>{
+    window.history.back(); // nebo alert('Zpět na přehled nastavení');
+  });
+</script>
+</body>
+</html>
