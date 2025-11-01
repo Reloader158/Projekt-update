@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nastavení silného ověření — max 2 faktory</title>
+<style>
+  :root{
+    --blue:#2f74db; --blue-pressed:#2a66bf;
+    --bg:#f6f7fb; --card:#fff; --divider:#eee; --muted:#6a6a6a;
+    --switch-on:#ff7b00; --disabled:#cfcfcf;
+    --warn-bg:#fff8f2; --warn-br:#ffe1c2; --error:#c62828; --ok:#1c7a2e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#111}
+  .page{max-width:480px;margin:0 auto;padding:16px}
+  h1{font-size:28px;margin:4px 0 14px}
+  .card{background:var(--card);border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.06);padding:16px;margin:12px 0}
+  .card h2{font-size:22px;margin:0 0 10px}
+  .info{background:#f4f6fb;border:1px solid #e6ecfb;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
+  .info strong{display:block;margin-bottom:4px}
+
+  .row{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;border-bottom:1px solid var(--divider)}
+  .row:last-child{border-bottom:none}
+  .left{min-width:0}
+  .title{font-size:16px;font-weight:600}
+  .sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .status{font-size:12px;margin-top:4px}
+  .status.bad{color:#b15a00}
+  .status.good{color:var(--ok)}
+  .cta{margin-left:8px; background:#eaf1ff;color:#174796;border:none;border-radius:14px;padding:6px 10px;font-size:12px;cursor:pointer}
+  .cta:active{transform:translateY(1px)}
+  .right{display:flex;align-items:center;gap:8px}
+
+  .switch{position:relative;width:48px;height:26px;flex:0 0 auto}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;border-radius:26px;background:#ccc;transition:.3s}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .switch input:checked + .slider{background:var(--switch-on)}
+  .switch input:checked + .slider:before{transform:translateX(22px)}
+  .switch.disabled .slider{background:var(--disabled)}
+  .switch.disabled{opacity:.6;pointer-events:none}
+
+  .summary{background:#f4f4f4;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:14px}
+  .hint{background:var(--warn-bg);border:1px solid var(--warn-br);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13px}
+  .error{display:none;margin-top:10px;background:#fdecea;border:1px solid #f5c2c0;color:var(--error);border-radius:10px;padding:10px 12px;font-size:13px}
+
+  .buttons{display:flex;gap:10px;margin-top:12px}
+  .btn{flex:1;padding:12px 0;border:none;border-radius:22px;font-size:16px;font-weight:600;cursor:pointer}
+  .btn-primary{background:#bcd0f5;color:#fff;cursor:not-allowed}
+  .btn-primary.enabled{background:var(--blue);cursor:pointer;box-shadow:0 6px 16px rgba(47,116,219,.25)}
+  .btn-primary.enabled:active{background:var(--blue-pressed)}
+  .btn-secondary{background:#e9e9e9;color:#222}
+
+  @keyframes shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+  }
+  .shake { animation: shake .35s linear; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Nastavení silného ověření</h1>
+
+  <div class="card">
+    <div class="info">
+      <strong>Jak to funguje</strong>
+      Můžete mít aktivní <b>nejvýše dva</b> různé faktory. Poprvé jsou zapnuté <b>Heslo</b> a <b>SMS kód</b>. Pokud chcete jinou dvojici, některý vypněte a zapněte jiný.
+    </div>
+
+    <!-- Metody -->
+    <div class="row" data-key="pin">
+      <div class="left">
+        <div class="title">PIN</div>
+        <div class="sub">Krátký osobní kód</div>
+        <div class="status bad">Nenastaveno</div>
+      </div>
+      <div class="right">
+        <button class="cta" data-setup="pin">Nastavit PIN</button>
+        <label class="switch disabled">
+          <input type="checkbox" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="row" data-key="bio">
+      <div class="left">
+        <div class="title">Biometrie</div>
+        <div class="sub">Face ID nebo Otisk prstu</div>
+        <div class="status bad">Nenastaveno</div>
+      </div>
+      <div class="right">
+        <button class="cta" data-setup="bio">Nastavit biometrii</button>
+        <label class="switch disabled">
+          <input type="checkbox" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="row" data-key="sms">
+      <div class="left">
+        <div class="title">SMS kód</div>
+        <div class="sub">Kódy na ověřené číslo</div>
+        <div class="status good">Připraveno</div>
+      </div>
+      <div class="right">
+        <label class="switch">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="row" data-key="pwd">
+      <div class="left">
+        <div class="title">Heslo</div>
+        <div class="sub">Přihlašovací heslo</div>
+        <div class="status good">Připraveno</div>
+      </div>
+      <div class="right">
+        <label class="switch">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="hint" id="hint">
+      <div id="hint-current"><b>Aktuálně:</b> Heslo + SMS kód</div>
+      <div id="hint-info">Můžete změnit vypnutím jednoho a zapnutím jiného.</div>
+    </div>
+
+    <div class="error" id="error">Nelze aktivovat více než 2 faktory. Nejprve jeden vypněte.</div>
+
+    <div class="summary" id="summary"><b>Vybrané faktory:</b> Heslo + SMS kód</div>
+
+    <div class="buttons">
+      <button class="btn btn-secondary" onclick="resetSelection()">Zrušit</button>
+      <button class="btn btn-primary enabled" id="saveBtn">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const state = { ready: { pin:false, bio:false, sms:true, pwd:true } };
+  const labels = { pin:'PIN', bio:'Biometrie', sms:'SMS kód', pwd:'Heslo' };
+
+  const rows = document.querySelectorAll('.row');
+  const summary = document.getElementById('summary');
+  const hintCurrent = document.getElementById('hint-current');
+  const errorBox = document.getElementById('error');
+  const saveBtn = document.getElementById('saveBtn');
+
+  function getSelectedKeys(){
+    return Array.from(document.querySelectorAll('.row input[type=checkbox]'))
+      .filter(i => !i.disabled && i.checked)
+      .map(i => i.closest('.row').dataset.key);
+  }
+
+  function selectionLabel(keys){
+    return keys.map(k=>labels[k]).join(' + ');
+  }
+
+  function updateSummary(){
+    const keys = getSelectedKeys();
+    summary.innerHTML = '<b>Vybrané faktory:</b> ' + (keys.length ? selectionLabel(keys) : '—');
+    const ok = (keys.length === 2);
+    saveBtn.classList.toggle('enabled', ok);
+    saveBtn.disabled = !ok;
+  }
+
+  function showError(rowEl){
+    errorBox.style.display = 'block';
+    const sw = rowEl.querySelector('.switch');
+    sw.classList.remove('shake'); void sw.offsetWidth; sw.classList.add('shake');
+    clearTimeout(showError._t);
+    showError._t = setTimeout(()=> errorBox.style.display='none', 7500);
+  }
+
+  function enforceMaxTwo(e){
+    const input = e.target;
+    if(!input.checked) { updateSummary(); return; }
+    const selectedBefore = getSelectedKeys().length;
+    if(selectedBefore > 2){
+      input.checked = false;
+      updateSummary();
+      showError(input.closest('.row'));
+    }else{
+      updateSummary();
+    }
+  }
+
+  function updateUI(){
+    rows.forEach(row=>{
+      const key = row.dataset.key;
+      const sw = row.querySelector('.switch');
+      const input = sw.querySelector('input');
+      const status = row.querySelector('.status');
+      const cta = row.querySelector('.cta');
+
+      if(state.ready[key]){
+        sw.classList.remove('disabled');
+        input.disabled = false;
+        status.textContent = 'Připraveno';
+        status.className = 'status good';
+        if(cta) cta.style.display = 'none';
+      }else{
+        sw.classList.add('disabled');
+        input.checked = false;
+        input.disabled = true;
+        status.textContent = 'Nenastaveno';
+        status.className = 'status bad';
+        if(cta) cta.style.display = '';
+      }
+    });
+    updateSummary();
+  }
+
+  function resetSelection(){
+    document.querySelectorAll('.row input[type=checkbox]').forEach(i=> i.checked = false);
+    document.querySelector('[data-key="sms"] input').checked = true;
+    document.querySelector('[data-key="pwd"] input').checked = true;
+    errorBox.style.display = 'none';
+    hintCurrent.innerHTML = '<b>Aktuálně:</b> Heslo + SMS kód';
+    updateSummary();
+  }
+
+  // Simulace "Nastavit PIN/Biometrii"
+  document.querySelectorAll('[data-setup]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const key = e.currentTarget.dataset.setup;
+      state.ready[key] = true;
+      updateUI();
+      const input = document.querySelector(`.row[data-key="${key}"] input[type=checkbox]`);
+      if(getSelectedKeys().length < 2){ input.checked = true; updateSummary(); }
+    });
+  });
+
+  document.querySelectorAll('.row input[type=checkbox]').forEach(i=>{
+    i.addEventListener('change', enforceMaxTwo);
+  });
+
+  // Uložit → aktualizuj jen první řádek hintu
+  saveBtn.addEventListener('click', ()=>{
+    const keys = getSelectedKeys();
+    const txt = selectionLabel(keys);
+    hintCurrent.innerHTML = '<b>Aktuálně:</b> ' + (txt || '—');
+    alert('Uloženo: ' + txt);
+  });
+
+  updateUI();
+  document.querySelector('[data-key="sms"] input').checked = true;
+  document.querySelector('[data-key="pwd"] input').checked = true;
+  updateSummary();
+</script>
+</body>
+</html>
