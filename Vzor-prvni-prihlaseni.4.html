@@ -154,10 +154,7 @@
               </div>
             </div>
 
-            <div id="sum" class="summary" style="display:none">
-              <b>Hotovo.</b> Budeme ověřovat: <span id="combo">PIN + Biometrie</span>. V Nastavení to můžete kdykoli změnit.
-            </div>
-          </div>
+            
 
           <div class="actions">
             <button id="later" class="btn btn-sec">Připomenout později</button>
@@ -276,21 +273,33 @@
     updateUI();
   }
 
-  function updateUI(){
+    function updateUI(){
+    // statusy + labely
     pinStatus.textContent = hasPin ? 'Připraveno' : 'Nenastaveno';
-    pinStatus.className = 'status ' + (hasPin?'st-ok':'st-bad');
-    btnPin.textContent   = hasPin ? 'Změnit PIN' : 'Nastavit PIN';
-    btnPin.className     = 'cta ' + (hasPin?'cta-ghost':'cta-prim');
+    pinStatus.className   = 'status ' + (hasPin ? 'st-ok' : 'st-bad');
+    btnPin.textContent    = hasPin ? 'Změnit PIN' : 'Nastavit PIN';
+    btnPin.className      = 'cta ' + (hasPin ? 'cta-ghost' : 'cta-prim');
 
     bioStatus.textContent = hasBio ? 'Připraveno' : 'Nenastaveno';
-    bioStatus.className   = 'status ' + (hasBio?'st-ok':'st-bad');
+    bioStatus.className   = 'status ' + (hasBio ? 'st-ok' : 'st-bad');
     btnBio.textContent    = hasBio ? 'Změnit nastavení' : 'Povolit biometrii';
-    btnBio.className      = 'cta ' + (hasBio?'cta-prim':'cta-ghost');
+    btnBio.className      = 'cta ' + (hasBio ? 'cta-prim' : 'cta-ghost');
 
-    const both = hasPin && hasBio;
-    btnContinue.disabled = !both;
-    btnContinue.setAttribute('aria-disabled', String(!both));
-    sum.style.display = both ? 'block' : 'none';
+    // ✅ logika „hotovo“:
+    // - když zařízení biometrie NEPODPORUJE → stačí mít PIN
+    // - jinak vyžadujeme PIN + biometrii
+    const needBio = deviceSupportsBio;
+    const ready   = hasPin && (!needBio || hasBio);
+
+    btnContinue.disabled = !ready;
+    btnContinue.setAttribute('aria-disabled', String(!ready));
+
+    // souhrn: zobraz „PIN + Biometrie“ nebo jen „PIN“
+    if (ready) {
+      const comboEl = document.getElementById('combo');
+      if (comboEl) comboEl.textContent = needBio ? 'PIN + Biometrie' : 'PIN';
+    }
+    document.getElementById('sum').style.display = ready ? 'block' : 'none';
   }
 
   function toast(msg){
