@@ -418,7 +418,10 @@
   // spodní akce
   document.getElementById('later').addEventListener('click', ()=>{ toast('Připomeneme později'); document.getElementById('onboard').style.display='none'; });
   document.getElementById('noThanks').addEventListener('click', ()=>{ toast('Můžete kdykoli změnit v Nastavení'); document.getElementById('onboard').style.display='none'; });
-  btnContinue.addEventListener('click', ()=>{ if(btnContinue.disabled) return; toast('Hotovo – PIN + Biometrie'); document.getElementById('onboard').style.display='none'; });
+  btnContinue.addEventListener('click', () => {
+  if (btnContinue.disabled) return;  // zachováme logiku povolení
+  window.location.assign('https://reloader158.github.io/Projekt-update/nastaveni_3.5.html');
+  });
 
   // ✅ Dev dropdown – přepínání stavů biometrie
   const bioState = document.getElementById('bioState');
