@@ -90,7 +90,7 @@
 
       <button class="btn btn-secondary">Upravit ověřovací faktory</button>
 
-      <!-- ⛔️ NOVĚ: červené tlačítko resetu místo „Obnovovacích faktorů“ -->
+      <!-- ⛔️ NOVĚ: červené tlačítko resetu -->
       <button id="resetBtn" class="btn btn-danger">Reset zabezpečení</button>
 
       <!-- Jednofaktor -->
@@ -255,11 +255,9 @@
     updateActivateState();
   }
 
+  // ✅ UŽ NEODŠKRTÁVÁME ostatní přepínače – lze zapnout oba
   actionSwitches.forEach(sw => {
-    sw.addEventListener('change', (e)=>{
-      if(e.target.checked){
-        actionSwitches.forEach(o=>{ if(o!==e.target) o.checked=false; });
-      }
+    sw.addEventListener('change', () => {
       updateActivateState();
     });
   });
