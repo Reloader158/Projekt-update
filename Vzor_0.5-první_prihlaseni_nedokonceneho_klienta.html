@@ -22,7 +22,7 @@
   .screen{position:absolute;inset:0;background:#000 url('prehled.png') center/cover no-repeat;filter:blur(2px) brightness(.85)}
   .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:120px;height:18px;background:#000;border-radius:0 0 12px 12px;opacity:.4;pointer-events:none;z-index:2}
 
-  /* Wizard container */
+  /* Wizard */
   .scrim{position:absolute;inset:0;background:rgba(0,0,0,.35)}
   .wizard{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px}
   .card{width:min(560px,92%);background:var(--card);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
@@ -43,7 +43,6 @@
   .btn-primary:active{background:var(--blue-pressed)}
   .btn-ghost{background:#eef3ff;color:#174796}
   .btn-light{background:#e9e9e9}
-  .btn-danger{background:#e95454;color:#fff}
   .btn[disabled]{opacity:.6;cursor:not-allowed;box-shadow:none}
   .grid{display:grid;gap:12px}
 
@@ -59,17 +58,17 @@
   .footer{display:flex;gap:10px;padding:14px 16px;border-top:1px solid #eef0f4}
   .hint{font-size:12px;color:#6b7280}
 
-  /* Modal: fake camera */
+  /* Fake camera */
   .overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
   .modal{width:min(420px,92%);background:#fff;border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
   .mhd{padding:14px 16px;border-bottom:1px solid #eef0f4;font-weight:800}
   .mbd{padding:16px}
   .frame{height:180px;border:3px dashed #7a859a;border-radius:12px;display:grid;place-items:center;margin-bottom:12px;color:#7a859a}
   .mactions{display:flex;gap:10px;padding:14px 16px;border-top:1px solid #eef0f4}
+
   .toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:#111;color:#fff;padding:8px 12px;border-radius:12px;opacity:0;transition:.25s;pointer-events:none;z-index:80;font-size:13px}
   .toast.show{opacity:1}
 
-  /* tiny util */
   .hidden{display:none !important}
 </style>
 </head>
@@ -78,12 +77,12 @@
     <div class="phone">
       <div class="screen"></div>
       <div class="notch"></div>
-      <div class="scrim"></div>
+      <div class="scrim" id="scrim"></div>
 
-      <div class="wizard">
+      <div class="wizard" id="wizard">
         <div class="card">
           <!-- header -->
-          <div class="header">
+          <div class="header" id="header">
             <button class="back" id="backBtn" disabled>Zpět</button>
             <div id="progressWrap">
               <div class="step" id="stepText">Krok 0/4</div>
@@ -96,7 +95,7 @@
           <div class="body" id="view"><!-- dynamic --></div>
 
           <!-- footer -->
-          <div class="footer">
+          <div class="footer" id="footer">
             <button class="btn btn-light" id="laterBtn">Později</button>
             <button class="btn btn-primary" id="nextBtn">Pokračovat</button>
           </div>
@@ -124,53 +123,75 @@
 
 <script>
 /* --------- STATE --------- */
-let step = 0;                 // 0..4 (0 = úvod, 1–3 = doklady, 4 = odeslání+zabezpečení)
+let step = 0; // 0..4
 const totalSteps = 4;
 
 const docs = {
-  frontID: {title:"Občanský průkaz — přední strana", file:null, status:"pending", img:null},
-  backID:  {title:"Občanský průkaz — zadní strana",  file:null, status:"pending", img:null},
-  extra:   {title:"Doplňkový doklad — přední strana", file:null, status:"pending", img:null,
+  frontID:{title:"Občanský průkaz — přední strana",file:null,status:"pending",img:null},
+  backID: {title:"Občanský průkaz — zadní strana", file:null,status:"pending",img:null},
+  extra:  {title:"Doplňkový doklad — přední strana",file:null,status:"pending",img:null,
            hint:"Může to být Cestovní pas, Řidičský průkaz nebo Kartička pojištěnce."}
 };
-
-const stepOrder = ["frontID","backID","extra"];
+const stepOrder=["frontID","backID","extra"];
 
 /* --------- EL --------- */
-const view = document.getElementById('view');
-const bar  = document.getElementById('bar');
-const stepText = document.getElementById('stepText');
-const backBtn  = document.getElementById('backBtn');
-const nextBtn  = document.getElementById('nextBtn');
-const closeBtn = document.getElementById('closeBtn');
-const laterBtn = document.getElementById('laterBtn');
-const cam = document.getElementById('cam');
-const camCancel = document.getElementById('camCancel');
-const camShoot  = document.getElementById('camShoot');
-const toast = document.getElementById('toast');
-const progressWrap = document.getElementById('progressWrap');
+const wizard=document.getElementById('wizard');
+const scrim =document.getElementById('scrim');
+const header=document.getElementById('header');
+const view  =document.getElementById('view');
+const bar   =document.getElementById('bar');
+const stepText=document.getElementById('stepText');
+const backBtn =document.getElementById('backBtn');
+const nextBtn =document.getElementById('nextBtn');
+const closeBtn=document.getElementById('closeBtn');
+const laterBtn=document.getElementById('laterBtn');
+const footer  =document.getElementById('footer');
+const cam =document.getElementById('cam');
+const camCancel=document.getElementById('camCancel');
+const camShoot =document.getElementById('camShoot');
+const toast=document.getElementById('toast');
+const progressWrap=document.getElementById('progressWrap');
 
+/* --------- OPEN/CLOSE --------- */
+// zobrazit vždy, pokud není odložené v aktuální session
+function shouldOpenWizard(){
+  return sessionStorage.getItem('docsWizardSnoozed')!=='1';
+}
+function closeWizard(){ wizard.classList.add('hidden'); }
+function openWizard(){ wizard.classList.remove('hidden'); }
+
+/* --------- PROGRESS & LAYOUT --------- */
 function setProgress(){
-  // Na úvodní stránce skryj zpět + progress
   if(step===0){
+    // úvod: bez back/progress/close a bez Next v patičce
     backBtn.classList.add('hidden');
     progressWrap.classList.add('hidden');
-    stepText.textContent = `Krok 0/${totalSteps}`;
-    bar.style.width = '0%';
+    closeBtn.classList.add('hidden');
+    nextBtn.classList.add('hidden');
+    footer.classList.remove('hidden');
+  }else if(step===4){
+    // finále: bez headeru i footeru
+    header.classList.add('hidden');
+    footer.classList.add('hidden');
   }else{
+    header.classList.remove('hidden');
     backBtn.classList.remove('hidden');
     progressWrap.classList.remove('hidden');
-    const pct = (step/totalSteps)*100;
-    bar.style.width = pct + '%';
-    stepText.textContent = `Krok ${step}/${totalSteps}`;
+    closeBtn.classList.remove('hidden');
+    footer.classList.remove('hidden');
+    nextBtn.classList.remove('hidden');
+
+    const pct=(step/totalSteps)*100;
+    bar.style.width=pct+'%';
+    stepText.textContent=`Krok ${step}/${totalSteps}`;
   }
-  backBtn.disabled = (step<=0);
-  nextBtn.textContent = (step===3 ? "Odeslat ke schválení" : step===4 ? "Zavřít" : "Pokračovat");
+  backBtn.disabled=(step<=0);
+  nextBtn.textContent=(step===3?"Odeslat ke schválení":"Pokračovat");
 }
 
 /* --------- VIEWS --------- */
 function uiIntro(){
-  view.innerHTML = [
+  view.innerHTML=[
     '<div class="title">Ahoj, vítej v aplikaci Rychlá Peněženka</div>',
     '<div class="sub">Pro úspěšné pokračování prosíme o nahrání dokladů. ',
       'Můžeš to udělat zde v průvodci, nebo v sekci <b>Moje dokumenty</b> dole na liště.</div>',
@@ -179,62 +200,57 @@ function uiIntro(){
       '<button class="btn btn-ghost" id="goDocs">Přejít do „Moje dokumenty“</button>',
     '</div>'
   ].join('');
-
-  document.getElementById('startHere').onclick = function(){ step=1; render(); };
-  document.getElementById('goDocs').onclick = function(){ showToast('Otevřela by se sekce Moje dokumenty.'); };
-  nextBtn.disabled = true;
+  document.getElementById('startHere').onclick=()=>{ step=1; render(); };
+  document.getElementById('goDocs').onclick=()=> showToast('Otevřela by se sekce Moje dokumenty.');
 }
 
 function docCard(key){
-  var d = docs[key];
-  var statusClass = (d.status==='ok') ? 'b-ok' : (d.status==='bad' ? 'b-bad' : 'b-pending');
-  var statusText  = (d.status==='ok') ? 'OK'   : (d.status==='bad' ? 'Nečitelné' : 'Nenahráno');
+  const d=docs[key];
+  const statusClass=(d.status==='ok')?'b-ok':(d.status==='bad'?'b-bad':'b-pending');
+  const statusText =(d.status==='ok')?'OK':(d.status==='bad'?'Nečitelné':'Nenahráno');
 
-  view.innerHTML = [
-    '<div class="title">', d.title, '</div>',
-    (d.hint ? '<div class="sub">'+ d.hint +'</div>' : ''),
+  view.innerHTML=[
+    '<div class="title">',d.title,'</div>',
+    (d.hint?'<div class="sub">'+d.hint+'</div>':''),
     '<div class="doc">',
       '<div class="hd">',
         '<div class="sub">Nahraj čitelnou přední stranu. Doklad musí být celý v záběru.</div>',
-        '<span class="badge ', statusClass ,'">', statusText ,'</span>',
+        '<span class="badge ',statusClass,'">',statusText,'</span>',
       '</div>',
       '<div class="row" style="margin-top:10px">',
         '<input type="file" accept="image/*" id="file" style="display:none">',
         '<button class="btn btn-ghost" id="uploadBtn">Nahrát</button>',
         '<button class="btn btn-primary" id="photoBtn">Vyfotit</button>',
       '</div>',
-      '<div class="preview" id="preview">', (d.img ? '<img src="'+ d.img +'">' : 'Žádný náhled') ,'</div>',
+      '<div class="preview" id="preview">', (d.img?'<img src="'+d.img+'">':'Žádný náhled') ,'</div>',
       '<div class="sub" id="ocrMsg"></div>',
     '</div>'
   ].join('');
 
-  document.getElementById('uploadBtn').onclick = function(){ document.getElementById('file').click(); };
-  document.getElementById('file').onchange = function(e){
-    var f = e.target.files[0]; if(!f) return;
-    var reader = new FileReader();
-    reader.onload = function(ev){
-      setDocImage(key, ev.target.result);
-      runOCR(key);
-    };
-    reader.readAsDataURL(f);
+  document.getElementById('uploadBtn').onclick=()=> document.getElementById('file').click();
+  document.getElementById('file').onchange=(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=(ev)=>{ setDocImage(key,ev.target.result); runOCR(key); };
+    r.readAsDataURL(f);
   };
 
-  document.getElementById('photoBtn').onclick = function(){
+  document.getElementById('photoBtn').onclick=()=>{
     cam.style.display='flex';
-    camShoot.onclick = function(){
+    camShoot.onclick=()=>{
       cam.style.display='none';
-      var img = genPlaceholderImage();
-      setDocImage(key, img);
+      const img=genPlaceholderImage();
+      setDocImage(key,img);
       runOCR(key);
     };
   };
-  camCancel.onclick = function(){ cam.style.display='none'; };
+  camCancel.onclick=()=> cam.style.display='none';
 
-  nextBtn.disabled = (d.status!=='ok');
+  nextBtn.disabled=(d.status!=='ok');
 }
 
 function uiSecurityQuestion(){
-  view.innerHTML = [
+  view.innerHTML=[
     '<div class="title">Doklady odeslány ke schválení</div>',
     '<div class="sub">Chceš nyní nastavit vícefaktorové ověřování (např. PIN + Biometrie) pro vyšší zabezpečení?</div>',
     '<div class="grid">',
@@ -242,88 +258,95 @@ function uiSecurityQuestion(){
       '<button class="btn btn-light" id="laterSec">Později</button>',
     '</div>'
   ].join('');
-  nextBtn.disabled = false;
-  nextBtn.textContent = 'Zavřít';
-  document.getElementById('goSecurity').onclick = function(){ showToast('Přešlo by se do Nastavení bezpečnosti.'); };
-  document.getElementById('laterSec').onclick   = function(){ showToast('Můžeš kdykoli později v Nastavení.'); };
+
+  document.getElementById('goSecurity').onclick=()=>{
+    window.location.assign('file://10.0.0.216/SMSVysledky%20RAID/1_do%C4%8Dasn%C3%A9/Vzor_1.4-prvn%C3%AD_prihlaseni.html');
+  };
+  document.getElementById('laterSec').onclick=()=>{
+    showToast('Můžeš kdykoli později v Nastavení.');
+    closeWizard();
+  };
 }
 
 /* --------- HELPERS --------- */
-function setDocImage(key, dataUrl){
-  docs[key].img = dataUrl;
-  const prev = document.getElementById('preview');
-  if(prev) prev.innerHTML = `<img src="${dataUrl}">`;
+function setDocImage(key,dataUrl){
+  docs[key].img=dataUrl;
+  const prev=document.getElementById('preview');
+  if(prev) prev.innerHTML=`<img src="${dataUrl}">`;
 }
-
 function runOCR(key){
-  const msg = document.getElementById('ocrMsg');
-  if(msg) msg.textContent = "Kontrolujeme čitelnost…";
-  docs[key].status = "pending";
-  updateBadge("pending");
+  const msg=document.getElementById('ocrMsg');
+  if(msg) msg.textContent="Kontrolujeme čitelnost…";
+  docs[key].status="pending"; updateBadge("pending");
   setTimeout(()=>{
-    // 80 % OK, 20 % nečitelné
-    const ok = Math.random() < 0.8;
-    docs[key].status = ok ? "ok" : "bad";
+    const ok=Math.random()<0.8;
+    docs[key].status=ok?"ok":"bad";
     updateBadge(docs[key].status);
-    if(msg) msg.textContent = ok ? "Vypadá to dobře." : "Text je hůře čitelný. Zkuste lepší světlo nebo zaostřit a vyfoťte znovu.";
-    nextBtn.disabled = !ok;
-  }, 700);
+    if(msg) msg.textContent= ok?"Vypadá to dobře.":"Text je hůře čitelný. Zkuste lepší světlo nebo zaostřit a vyfoťte znovu.";
+    nextBtn.disabled=!ok;
+  },700);
 
   function updateBadge(state){
-    const badge = document.querySelector('.badge');
-    if(!badge) return;
-    if(state==="ok"){ badge.className="badge b-ok"; badge.textContent="OK"; }
-    else if(state==="bad"){ badge.className="badge b-bad"; badge.textContent="Nečitelné"; }
-    else { badge.className="badge b-pending"; badge.textContent="Nenahráno"; }
+    const b=document.querySelector('.badge'); if(!b) return;
+    if(state==="ok"){ b.className="badge b-ok"; b.textContent="OK"; }
+    else if(state==="bad"){ b.className="badge b-bad"; b.textContent="Nečitelné"; }
+    else { b.className="badge b-pending"; b.textContent="Nenahráno"; }
   }
 }
-
 function genPlaceholderImage(){
-  // vytvoří jednoduchý „snímek dokladu“ jako dataURL
   const c=document.createElement('canvas'); c.width=600; c.height=380;
   const x=c.getContext('2d');
   x.fillStyle="#f1f5fb"; x.fillRect(0,0,c.width,c.height);
   x.strokeStyle="#8fa2bf"; x.lineWidth=6; x.strokeRect(12,12,c.width-24,c.height-24);
   x.fillStyle="#334155"; x.font="28px system-ui, -apple-system, Segoe UI, Roboto";
-  x.fillText("Náhled dokladu", 20, 60);
-  x.fillStyle="#64748b"; x.font="18px system-ui"; x.fillText("Demo obrázek (fotoaparát)", 20, 92);
+  x.fillText("Náhled dokladu",20,60);
+  x.fillStyle="#64748b"; x.font="18px system-ui"; x.fillText("Demo obrázek (fotoaparát)",20,92);
   return c.toDataURL();
 }
-
-function showToast(t){ toast.textContent=t; toast.classList.add('show'); clearTimeout(showToast._t);
+function showToast(t){
+  toast.textContent=t; toast.classList.add('show'); clearTimeout(showToast._t);
   showToast._t=setTimeout(()=>toast.classList.remove('show'),1700);
 }
 
-function editDoc(k){ const idx = stepOrder.indexOf(k); step = 1+idx; render(); }
-
 /* --------- NAV --------- */
 function render(){
+  if(!shouldOpenWizard()){ closeWizard(); return; } else { openWizard(); }
+
+  // reset header/footer visibility before switching
+  header.classList.remove('hidden'); footer.classList.remove('hidden');
+
   setProgress();
-  if(step===0)      uiIntro();
+  if(step===0) uiIntro();
   else if(step>=1 && step<=3) docCard(stepOrder[step-1]);
   else if(step===4) uiSecurityQuestion();
 }
 
-backBtn.onclick = ()=>{ if(step>0){ step--; render(); } };
-nextBtn.onclick = ()=>{
-  if(step===0){ step=1; }
-  else if(step>=1 && step<=3){
-    const key = stepOrder[step-1];
-    if(docs[key].status!=="ok"){ showToast("Nejprve nahraj a potvrď čitelnou fotku."); return;}
-    if(step===3){
-      // poslední doklad -> rovnou odeslat
-      showToast("Odesláno ke schválení");
-      step = 4;
-    }else{
-      step++;
-    }
-  }else if(step===4){
-    showToast("Průvodce uzavřen"); // zavřít
+/* Handlery */
+backBtn.onclick=()=>{ if(step>0){ step--; render(); } };
+nextBtn.onclick=()=>{
+  if(step>=1 && step<=3){
+    const key=stepOrder[step-1];
+    if(docs[key].status!=="ok"){ showToast("Nejprve nahraj a potvrď čitelnou fotku."); return; }
+    if(step===3){ showToast("Odesláno ke schválení"); step=4; }
+    else{ step++; }
+    render();
   }
-  render();
 };
-closeBtn.onclick = ()=> showToast("Průvodce uzavřen");
-laterBtn.onclick = ()=> showToast("Připomeneme později");
+laterBtn.onclick=()=>{
+  if(step===0){
+    sessionStorage.setItem('docsWizardSnoozed','1');
+    closeWizard();
+  }else{
+    showToast("Připomeneme později");
+  }
+};
+closeBtn.onclick=()=>{ showToast("Průvodce uzavřen"); closeWizard(); };
+scrim.addEventListener('click',()=>{
+  if(step===0){
+    sessionStorage.setItem('docsWizardSnoozed','1');
+    closeWizard();
+  }
+});
 
 /* INIT */
 render();
