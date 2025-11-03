@@ -70,6 +70,24 @@
   .toast.show{opacity:1}
 
   .hidden{display:none !important}
+
+  /* přidej */
+  #progressWrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;   /* vycentruje text na lištu */
+    flex:1;               /* roztáhne se mezi Zpět a Zavřít */
+  }
+
+  /* pokud máš u .progress in-line width, dej ho do CSS */
+  .progress{
+    width:200px;          /* stejné jako dřív (můžeš změnit podle potřeby) */
+    margin:0 16px;        /* může být i margin: 0 auto; */
+  }
+  .step{
+    text-align:center;    /* jistota centrování textu */
+}
+
 </style>
 </head>
 <body>
@@ -124,15 +142,27 @@
 <script>
 /* --------- STATE --------- */
 let step = 0; // 0..4
-const totalSteps = 4;
+const totalSteps = 3;
 
 const docs = {
-  frontID:{title:"Občanský průkaz — přední strana",file:null,status:"pending",img:null},
-  backID: {title:"Občanský průkaz — zadní strana", file:null,status:"pending",img:null},
-  extra:  {title:"Doplňkový doklad — přední strana",file:null,status:"pending",img:null,
-           hint:"Může to být Cestovní pas, Řidičský průkaz nebo Kartička pojištěnce."}
+  frontID: {
+    title: "Občanský průkaz — přední strana",
+    desc: "Nahrajte čitelnou přední stranu občanského průkazu. Doklad musí být celý v záběru.",
+    file: null, status: "pending", img: null
+  },
+  backID: {
+    title: "Občanský průkaz — zadní strana",
+    desc: "Nahrajte čitelnou zadní stranu Vašeho průkazu. Doklad musí být celý v rámečku.",
+    file: null, status: "pending", img: null
+  },
+  extra: {
+    title: "Doplňkový doklad — přední strana",
+    desc: "Lze použít cestovní pas, řidičský průkaz, rodný list nebo kartička pojištěnce.",
+    hint: "Nahrajte čitelně hlavní stranu Vašeho dokumentu. Doklad musí být celý v rámečku.",
+    file: null, status: "pending", img: null
+  }
 };
-const stepOrder=["frontID","backID","extra"];
+stepOrder=["frontID","backID","extra"];
 
 /* --------- EL --------- */
 const wizard=document.getElementById('wizard');
@@ -192,9 +222,8 @@ function setProgress(){
 /* --------- VIEWS --------- */
 function uiIntro(){
   view.innerHTML=[
-    '<div class="title">Ahoj, vítej v aplikaci Rychlá Peněženka</div>',
-    '<div class="sub">Pro úspěšné pokračování prosíme o nahrání dokladů. ',
-      'Můžeš to udělat zde v průvodci, nebo v sekci <b>Moje dokumenty</b> dole na liště.</div>',
+    '<div class="title">Vítejte v aplikaci Rychlá Peněženka!</div>',
+    '<div class="sub">Nyní nahrajte požadované doklady pomocí tohoto průvodce nebo přímo v sekci <b>Moje dokumenty</b>.</div>',
     '<div class="grid">',
       '<button class="btn btn-primary" id="startHere">Nahrát doklady zde</button>',
       '<button class="btn btn-ghost" id="goDocs">Přejít do „Moje dokumenty“</button>',
@@ -214,7 +243,7 @@ function docCard(key){
     (d.hint?'<div class="sub">'+d.hint+'</div>':''),
     '<div class="doc">',
       '<div class="hd">',
-        '<div class="sub">Nahraj čitelnou přední stranu. Doklad musí být celý v záběru.</div>',
+        `<div class="sub">${d.desc || 'Nahraj čitelnou přední stranu. Doklad musí být celý v záběru.'}</div>`,
         '<span class="badge ',statusClass,'">',statusText,'</span>',
       '</div>',
       '<div class="row" style="margin-top:10px">',
