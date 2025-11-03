@@ -9,6 +9,7 @@
     --blue:#2f74db; --blue-pressed:#2a66bf;
     --card:#ffffff; --bg:#f6f7fb; --muted:#666; --divider:#eee;
     --switch-on:#ff7b00;
+    --danger:#e53935; --danger-pressed:#c62828;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#111}
@@ -26,6 +27,8 @@
   .btn:active{background:var(--blue-pressed)}
   .btn-secondary{background:#eaf1ff;color:#174796;box-shadow:none}
   .btn[disabled]{opacity:.6;cursor:not-allowed}
+  .btn-danger{background:var(--danger)}
+  .btn-danger:active{background:var(--danger-pressed)}
 
   .row{display:flex;align-items:center;justify-content:space-between;padding:14px 6px;border-bottom:1px solid var(--divider)}
   .row:last-child{border-bottom:none}
@@ -51,7 +54,7 @@
   .onefactor.disabled .lockable{pointer-events:none}
   .onefactor .note{font-size:13px;color:#9a4b00;margin:4px 2px 8px}
 
-  /* modal */
+  /* overlay / modal */
   .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(4px);z-index:999;align-items:center;justify-content:center}
   .modal{background:#fff;border-radius:20px;max-width:420px;width:90%;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2)}
   .modal h3{margin:0 0 10px;text-align:center}
@@ -60,6 +63,10 @@
   .modal .row-btns{display:flex;gap:10px;margin-top:12px}
   .modal .btn{margin:0;border-radius:14px}
   .error{display:none;margin-top:8px;font-size:13px;background:#fdecea;border:1px solid #f5c2c0;color:#c62828;border-radius:10px;padding:8px 10px}
+
+  .factor-item{padding:14px 20px;font-size:17px;border-bottom:1px solid #eee;cursor:pointer;transition:background .2s}
+  .factor-item:last-child{border-bottom:none}
+  .factor-item:hover{background:#f4f6fb}
 </style>
 </head>
 <body>
@@ -78,15 +85,13 @@
 
       <div class="info">
         <strong>Aktuální stav zabezpečení</strong>
-        PIN + Biometrie (Face ID / Otisk)
+        <span id="securityStatus">PIN + Biometrie (Face ID / Otisk)</span>
       </div>
 
       <button class="btn btn-secondary">Upravit ověřovací faktory</button>
 
-      <div class="info">
-        <strong>Obnovovací faktory (pro reset)</strong>
-        SMS + Heslo
-      </div>
+      <!-- ⛔️ NOVĚ: červené tlačítko resetu místo „Obnovovacích faktorů“ -->
+      <button id="resetBtn" class="btn btn-danger">Reset zabezpečení</button>
 
       <!-- Jednofaktor -->
       <div class="info onefactor" id="onefactorBox">
@@ -111,7 +116,7 @@
             <span class="slider"></span>
           </label>
         </div>
-      
+
         <div class="row">
           <div class="label">Zobrazení údajů karty</div>
           <label class="switch">
@@ -120,7 +125,6 @@
           </label>
         </div>
 
-        <!-- NOVÉ tlačítko -->
         <button class="btn lockable" id="activateOneFactor" disabled>Aktivovat jednofaktor</button>
       </div>
     </section>
@@ -167,7 +171,21 @@
     </div>
   </div>
 
-  <!-- Modal: SMS potvrzení -->
+  <!-- Modal: HESLO (krok 1) -->
+  <div id="pwdModal" class="overlay">
+    <div class="modal">
+      <h3>Potvrďte heslem</h3>
+      <div class="hint" style="text-align:center">Z bezpečnostních důvodů ověřte totožnost. (Demo heslo: <b>1</b>)</div>
+      <div class="field"><input id="pwdInput" type="password" placeholder="Zadejte heslo"></div>
+      <div id="pwdError" class="error">Nesprávné heslo.</div>
+      <div class="row-btns">
+        <button id="pwdCancel" class="btn btn-secondary">Zrušit</button>
+        <button id="pwdConfirm" class="btn">Pokračovat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: SMS (krok 2) -->
   <div id="smsModal" class="overlay">
     <div class="modal">
       <h3>Potvrzení přes SMS</h3>
@@ -181,12 +199,6 @@
     </div>
   </div>
 
-<style>
-  .factor-item{padding:14px 20px;font-size:17px;border-bottom:1px solid #eee;cursor:pointer;transition:background .2s}
-  .factor-item:last-child{border-bottom:none}
-  .factor-item:hover{background:#f4f6fb}
-</style>
-
 <script>
   // Elementy – jednofaktor
   const onefactorBox    = document.getElementById('onefactorBox');
@@ -196,17 +208,26 @@
   const note            = document.getElementById('oneFactorNote');
   const activateBtn     = document.getElementById('activateOneFactor');
 
-  // Modal – výběr faktoru
+  // Modaly – výběr faktoru
   const factorModal  = document.getElementById("factorModal");
   const cancelFactor = document.getElementById("cancelFactor");
   const factorItems  = document.querySelectorAll(".factor-item");
 
-  // Modal – SMS
+  // Modaly – reset: heslo + sms
+  const resetBtn   = document.getElementById('resetBtn');
+  const pwdModal   = document.getElementById('pwdModal');
+  const pwdInput   = document.getElementById('pwdInput');
+  const pwdError   = document.getElementById('pwdError');
+  const pwdCancel  = document.getElementById('pwdCancel');
+  const pwdConfirm = document.getElementById('pwdConfirm');
+
   const smsModal   = document.getElementById('smsModal');
   const smsCode    = document.getElementById('smsCode');
   const smsError   = document.getElementById('smsError');
   const smsCancel  = document.getElementById('smsCancel');
   const smsConfirm = document.getElementById('smsConfirm');
+
+  const securityStatus = document.getElementById('securityStatus');
 
   // Stav
   let oneFactorEnabled = false;
@@ -216,7 +237,7 @@
     onefactorBox.classList.toggle('disabled', locked);
     chooseBtn.disabled = locked;
     actionSwitches.forEach(i => { i.disabled = locked; });
-    activateBtn.disabled = true; // jistota
+    activateBtn.disabled = true;
   }
 
   function resetSelection(){
@@ -234,7 +255,6 @@
     updateActivateState();
   }
 
-  // maximálně 1 akční přepínač
   actionSwitches.forEach(sw => {
     sw.addEventListener('change', (e)=>{
       if(e.target.checked){
@@ -244,26 +264,23 @@
     });
   });
 
-  // podmínka pro povolení tlačítka Aktivovat
   function updateActivateState(){
     const anyActionOn = Array.from(actionSwitches).some(i=>i.checked);
     activateBtn.disabled = !(oneFactorEnabled && selectedFactor && anyActionOn);
   }
 
-  // toggle ON/OFF
   oneFactorToggle.addEventListener('change', (e)=>{
     oneFactorEnabled = e.target.checked;
     if(oneFactorEnabled){
       lockBox(false);
-      resetSelection(); // vynutit nový výběr
+      resetSelection();
     }else{
       lockBox(true);
       resetSelection();
     }
   });
 
-  // výběr faktoru (modal)
-  chooseBtn.addEventListener("click", () => { if(!chooseBtn.disabled) { factorModal.style.display = "flex"; }});
+  chooseBtn.addEventListener("click", () => { if(!chooseBtn.disabled) factorModal.style.display = "flex"; });
   cancelFactor.addEventListener("click", () => { factorModal.style.display = "none"; });
 
   factorItems.forEach(item => {
@@ -275,7 +292,7 @@
     });
   });
 
-  // Aktivovat jednofaktor -> SMS modal
+  // Aktivovat jednofaktor -> SMS modal (ukázka)
   activateBtn.addEventListener('click', ()=>{
     if(activateBtn.disabled) return;
     smsError.style.display = 'none';
@@ -284,15 +301,43 @@
     setTimeout(()=> smsCode.focus(), 50);
   });
 
-  smsCancel.addEventListener('click', ()=> smsModal.style.display = 'none');
+  // RESET: tlačítko
+  resetBtn.addEventListener('click', ()=>{
+    pwdError.style.display='none';
+    pwdInput.value='';
+    pwdModal.style.display='flex';
+    setTimeout(()=>pwdInput.focus(), 50);
+  });
+
+  // RESET: krok 1 – heslo
+  pwdCancel.addEventListener('click', ()=> pwdModal.style.display='none');
+  pwdConfirm.addEventListener('click', ()=>{
+    if(pwdInput.value.trim() === '1'){
+      pwdModal.style.display='none';
+      smsError.style.display='none';
+      smsCode.value='';
+      smsModal.style.display='flex';   // krok 2
+      setTimeout(()=> smsCode.focus(), 50);
+    }else{
+      pwdError.style.display='block';
+    }
+  });
+
+  // RESET: krok 2 – sms
+  smsCancel.addEventListener('click', ()=> smsModal.style.display='none');
   smsConfirm.addEventListener('click', ()=>{
     if(smsCode.value.trim() === '123456'){
-      smsError.style.display = 'none';
-      smsModal.style.display = 'none';
-      alert('Jednofaktorové ověření aktivováno: ' + selectedFactor);
-      // tady by v reálu proběhlo uložení na server
+      smsModal.style.display='none';
+      // aktualizace statusu
+      securityStatus.textContent = 'Heslo + SMS';
+      // vypnout jednofaktor
+      oneFactorToggle.checked = false;
+      oneFactorEnabled = false;
+      lockBox(true);
+      resetSelection();
+      alert('Zabezpečení bylo obnoveno na Heslo + SMS.');
     }else{
-      smsError.style.display = 'block';
+      smsError.style.display='block';
     }
   });
 
