@@ -51,8 +51,21 @@
   .shake{animation:shake .35s linear}
 
   .bio-wrap{display:none}
-  .bio-illustr{width:120px;height:120px;border-radius:60px;background:rgba(255,255,255,.12);margin:12px auto 12px;display:grid;place-items:center;font-size:48px}
-  .bio-spot{position:relative;height:120px;margin:12px 0}
+  .bio-illustr {
+    width:120px;
+    height:120px;
+    border-radius:60px;
+    background:rgba(255,255,255,.12);
+    margin:12px auto 48px; /* 👈 větší mezera pod smajlíkem */
+    display:grid;
+    place-items:center;
+    font-size:48px;
+  }
+  .bio-spot{
+    position:relative;
+    height:120px;
+    margin:12px 0 48px; /* větší mezera pod otiskem jako u Face ID */
+  }
   .finger{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:120px;height:120px;border-radius:60px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:48px}
 
   .cta-row{display:flex;gap:10px;justify-content:center}
