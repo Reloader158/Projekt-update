@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Přihlášení – PIN + biometrie (phone frame)</title>
+<style>
+  :root{
+    --blue:#2f74db; --blue-pressed:#2a66bf;
+    --muted:#cfe0ff; --card:#ffffff; --shadow:0 18px 60px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:#0f1115;display:grid;place-items:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#fff;
+  }
+
+  /* PHONE FRAME */
+  .stage{width:min(390px,95vw);aspect-ratio:390/844;position:relative;max-height:95vh}
+  .phone{position:absolute;inset:0;border-radius:28px;overflow:hidden;background:#000;box-shadow:0 18px 60px rgba(0,0,0,.45)}
+  .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:120px;height:18px;background:#000;border-radius:0 0 12px 12px;opacity:.5;z-index:5}
+  .screen{position:absolute;inset:0;background:var(--blue);display:flex;align-items:center;justify-content:center}
+
+  /* App wrapper */
+  .app{
+    width:min(360px,92%);
+    padding:28px 16px 120px; /* rezerva nad devbarem */
+    position:relative;
+  }
+  .logo{width:56px;height:56px;border-radius:28px;background:#fff;display:grid;place-items:center;margin:0 auto 12px;box-shadow:0 6px 24px rgba(0,0,0,.25);color:var(--blue);font-weight:900}
+  .headline{font-weight:800;font-size:18px;text-align:center;margin:6px 0 6px}
+  .sub{opacity:.9;text-align:center;font-size:14px;margin:0 0 10px}
+
+  .pin-dots{display:flex;gap:12px;justify-content:center;margin:10px 0 10px}
+  .dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.35);box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+  .dot.on{background:#fff;box-shadow:none}
+
+  .pinLockInfo{min-height:18px;text-align:center;font-size:13px;margin:2px 0 6px;opacity:.95}
+
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 auto;max-width:320px}
+  .key{user-select:none;cursor:pointer;background:rgba(255,255,255,.12);backdrop-filter:blur(2px);border-radius:18px;
+       text-align:center;padding:18px 0;font-size:22px;font-weight:800;transition:.15s}
+  .key:active{transform:scale(.98);background:rgba(255,255,255,.18)}
+  .key.icon{font-size:18px;font-weight:700}
+  .key.disabled{opacity:.35;pointer-events:none}
+
+  .error{min-height:18px;text-align:center;margin:6px 0 8px;color:#ffd6d6}
+  .timer{font-weight:800}
+  @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+  .shake{animation:shake .35s linear}
+
+  .bio-wrap{display:none}
+  .bio-illustr{width:120px;height:120px;border-radius:60px;background:rgba(255,255,255,.12);margin:12px auto 12px;display:grid;place-items:center;font-size:48px}
+  .bio-spot{position:relative;height:120px;margin:12px 0}
+  .finger{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:120px;height:120px;border-radius:60px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:48px}
+
+  .cta-row{display:flex;gap:10px;justify-content:center}
+  .btn{border:none;border-radius:999px;padding:12px 16px;font-weight:800;cursor:pointer}
+  .btn-primary{background:#fff;color:var(--blue)}
+  .btn-ghost{background:rgba(255,255,255,.18);color:#fff}
+
+  /* Spodní oblast pro BIOMETRII (pevně nad devbarem) */
+  .bio-foot{position:absolute;left:16px;right:16px;bottom:72px;display:flex;flex-direction:column;align-items:center;gap:10px}
+
+  /* Fallback blok (text + tlačítko) */
+  .fallback{text-align:center;max-width:320px;display:none}
+  .fallback .txt{font-size:13px;opacity:.95;margin-bottom:6px}
+  .fallback .btn{background:#fff;color:#111}
+
+  /* devbar – přibitý úplně dole k telefonu (mimo .app) */
+  .devbar{
+    position:absolute;left:10px;right:10px;bottom:6px;display:flex;gap:8px;align-items:center;
+    background:rgba(0,0,0,.28);backdrop-filter:blur(2px);border-radius:12px;padding:8px 10px;font-size:12px;color:#fff;z-index:10
+  }
+  .devbar select,.devbar button{border-radius:8px;border:1px solid rgba(255,255,255,.35);background:#fff;color:#111;padding:6px 8px}
+
+  /* Když zobrazíme fallback, schovej spodní tlačítka */
+  #step-bio.show-fallback .cta-row { display: none; }
+  #step-bio.show-fallback #bioFallback { display: block; }
+
+  /* Rezerva nad devbarem – můžeš doladit, ale 72px sedí k devbaru */
+  .bio-foot { bottom: 72px; }
+
+</style>
+</head>
+<body>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="screen">
+        <div class="app" id="sheet">
+          <!-- STEP 1: PIN -->
+          <div id="step-pin">
+            <div class="logo">RP</div>
+            <div class="headline">Zadejte Váš PIN</div>
+            <div class="sub">Zadejte 6 číslic</div>
+
+            <div class="pin-dots" id="dots"></div>
+            <div id="pinLockInfo" class="pinLockInfo"></div>
+            <div class="error" id="pinErr"></div>
+
+            <div class="pad" id="pad">
+              <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+              <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+              <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+              <div class="key icon" data-k="back">⌫</div><div class="key">0</div><div class="key icon" data-k="clear">⨯</div>
+            </div>
+
+            <!-- PIN fallback – v normálním toku POD klávesnicí -->
+            <div id="pinFallback" class="fallback" style="margin-top:12px;">
+              <div class="txt">Opakovaně se Vám nedaří se přihlásit, můžete se přihlásit pomocí výchozího zabezpečení.</div>
+              <button class="btn" id="pinUseSms">Použít HESLO + SMS</button>
+            </div>
+          </div>
+
+          <!-- STEP 2: BIOMETRIE -->
+          <div id="step-bio" class="bio-wrap">
+            <div class="logo">RP</div>
+            <div class="headline" id="bioTitle">Ověření Face ID</div>
+            <div class="sub" id="bioSub">Podívejte se na displej a držte telefon před obličejem.</div>
+
+            <!-- Face ID (horní část) -->
+            <div id="faceBox">
+              <div class="bio-illustr">😊</div>
+            </div>
+
+            <!-- Otisk (spodní střed) -->
+            <div id="fingerBox" class="bio-spot" style="display:none">
+              <div class="finger">🔒</div>
+            </div>
+
+            <!-- spodní ovládání + fallback pro biometrie -->
+            <div class="bio-foot">
+              <div class="cta-row">
+                <button class="btn btn-ghost" id="bioFail">Nepovedlo se</button>
+                <button class="btn btn-primary" id="bioPass">Ověřit</button>
+              </div>
+              <div id="bioFallback" class="fallback">
+                <div class="txt">Opakovaně se Vám nedaří se přihlásit, můžete se přihlásit pomocí výchozího zabezpečení.</div>
+                <button class="btn" id="bioUseSms">Použít HESLO + SMS</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEV BAR – mimo .app, pevně u dna telefonu -->
+      <div class="devbar">
+        <span>Režim:</span>
+        <select id="mode">
+          <option value="face">PIN + Face ID</option>
+          <option value="finger">PIN + Otisk</option>
+        </select>
+        <button id="reset">Reset stavu</button>
+      </div>
+
+      <div class="notch"></div>
+    </div>
+  </div>
+
+<script>
+  // ===== Config =====
+  const PIN_LEN = 6;
+  const CORRECT_PIN = "111111";    // demo správný PIN
+  const LOCKOUT_SECS = 120;        // 2 minuty
+
+  // ===== State =====
+  let pinBuf = "";
+  let pinTries = 0;
+  let lockedUntil = 0;
+  let lockTimerId = null;
+
+  let bioMode = "face"; // "face" | "finger"
+  let bioFails = 0;
+
+  // ===== Helpers =====
+  const dots = document.getElementById('dots');
+  const pinErr = document.getElementById('pinErr');
+  const pad = document.getElementById('pad');
+  const sheet = document.getElementById('sheet');
+  const pinLockInfo = document.getElementById('pinLockInfo');
+
+  function renderDots(){
+    dots.innerHTML = Array.from({length:PIN_LEN},(_,i)=>`<div class="dot ${i<pinBuf.length?'on':''}"></div>`).join('');
+  }
+  function setPadDisabled(dis){
+    [...pad.children].forEach(k => k.classList.toggle('disabled', dis));
+  }
+
+  function startLockout(){
+    lockedUntil = Date.now() + LOCKOUT_SECS*1000;
+    document.getElementById('pinFallback').style.display = 'block';
+    tickLock();
+    setPadDisabled(true);
+    lockTimerId = setInterval(tickLock, 250);
+  }
+  function tickLock(){
+    const remain = Math.max(0, Math.ceil((lockedUntil - Date.now())/1000));
+    const m = String(Math.floor(remain/60)).padStart(2,'0');
+    const s = String(remain%60).padStart(2,'0');
+    pinLockInfo.innerHTML = `Po 3 neúspěšných pokusech <span class="timer">${m}:${s}</span>.`;
+    if(remain<=0){
+      clearInterval(lockTimerId);
+      setPadDisabled(false);
+      pinTries = 0;
+      pinErr.textContent = "";
+      pinLockInfo.textContent = "";
+      document.getElementById('pinFallback').style.display = 'none';
+    }
+  }
+
+  function goBio(){
+    bioFails = 0;
+    document.getElementById('step-bio').classList.remove('show-fallback');
+    document.getElementById('step-pin').style.display = 'none';
+    document.getElementById('step-bio').style.display = 'block';
+    applyBioMode();
+  }
+
+  function applyBioMode(){
+    const face = document.getElementById('faceBox');
+    const finger = document.getElementById('fingerBox');
+    const title = document.getElementById('bioTitle');
+    const sub = document.getElementById('bioSub');
+
+    if(bioMode==='face'){
+      face.style.display='block'; finger.style.display='none';
+      title.textContent = 'Ověření Face ID';
+      sub.textContent = 'Podívejte se na displej a držte telefon před obličejem.';
+    }else{
+      face.style.display='none'; finger.style.display='block';
+      title.textContent = 'Ověření otiskem prstu';
+      sub.textContent = 'Přiložte prst na snímač a držte jej v klidu.';
+    }
+  }
+
+  // ===== PIN keypad logic =====
+  function handleKey(val){
+    if(lockedUntil > Date.now()) return;
+    if(val==='back'){ if(pinBuf.length){ pinBuf = pinBuf.slice(0,-1); renderDots(); } return; }
+    if(val==='clear'){ pinBuf=""; renderDots(); return; }
+    if(pinBuf.length>=PIN_LEN) return;
+
+    pinBuf += val;
+    renderDots();
+
+    if(pinBuf.length===PIN_LEN){
+      if(pinBuf===CORRECT_PIN){
+        pinBuf=""; renderDots(); goBio();
+      }else{
+        pinTries++;
+        pinBuf=""; renderDots();
+        pinErr.textContent = `Chybný PIN (${pinTries}/3).`;
+        sheet.classList.remove('shake'); void sheet.offsetWidth; sheet.classList.add('shake');
+        if(pinTries>=3){ startLockout(); }
+      }
+    }
+  }
+
+  pad.addEventListener('click', (e)=>{
+    const el = e.target.closest('.key'); if(!el || el.classList.contains('disabled')) return;
+    const k = el.dataset.k || el.textContent.trim();
+    handleKey(k);
+  });
+
+  // ===== BIOMETRY (demo) =====
+  const BIO_FAIL_LIMIT = 2; // nově 2 pokusy
+
+  document.getElementById('bioPass').addEventListener('click', ()=>{
+    alert('Úspěšné přihlášení ✓'); // redirect do appky
+  });
+  document.getElementById('bioFail').addEventListener('click', ()=>{
+    bioFails++;
+    sheet.classList.remove('shake'); void sheet.offsetWidth; sheet.classList.add('shake');
+
+    // po dosažení limitu schovej CTA a ukaž fallback (bez překryvu)
+    if(bioFails >= BIO_FAIL_LIMIT){
+      document.getElementById('step-bio').classList.add('show-fallback');
+    }
+  });
+
+  // Fallback tlačítka – zobrazí statický obrázek přihlášení
+  document.getElementById('bioUseSms').addEventListener('click', ()=> showLoginImage());
+  document.getElementById('pinUseSms').addEventListener('click', ()=> showLoginImage());
+
+    function showLoginImage(){
+    const screen = document.querySelector('.screen');
+    screen.innerHTML = `
+      <img src="prihlaseni.png" alt="Přihlášení"
+        style="
+          position:absolute;
+          inset:0;
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          border-radius:0;
+        ">
+    `;
+  }
+
+  // ===== Devbar =====
+  const modeSel = document.getElementById('mode');
+  modeSel.addEventListener('change', ()=>{ bioMode = modeSel.value; applyBioMode(); });
+  document.getElementById('reset').addEventListener('click', ()=>{
+    pinBuf=""; pinTries=0; bioFails=0; lockedUntil=0;
+    clearInterval(lockTimerId); setPadDisabled(false);
+    document.getElementById('bioFallback').style.display='none';
+    document.getElementById('pinFallback').style.display='none';
+    document.getElementById('step-bio').classList.remove('show-fallback'); // <-- přidáno
+    document.getElementById('loginOverlay')?.remove();                      // pokud zůstala fotka
+    pinErr.textContent=""; pinLockInfo.textContent=""; renderDots();
+    document.getElementById('step-bio').style.display='none';
+    document.getElementById('step-pin').style.display='block';
+  });
+
+  // init
+  renderDots(); applyBioMode();
+</script>
+</body>
+</html>
