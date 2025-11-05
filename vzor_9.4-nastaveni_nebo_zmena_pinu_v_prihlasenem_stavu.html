@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nastavení PIN – nový / změna (varianta A)</title>
+<style>
+  :root{ --blue:#2f74db; --shadow:0 18px 60px rgba(0,0,0,.45); }
+  *{ box-sizing:border-box }
+  html,body{ height:100% }
+  body{
+    margin:0;background:#0f1115;display:grid;place-items:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#fff;
+  }
+
+  /* PHONE FRAME */
+  .stage{width:min(390px,95vw);aspect-ratio:390/844;position:relative;max-height:95vh}
+  .phone{position:absolute;inset:0;border-radius:28px;overflow:hidden;background:#000;box-shadow:var(--shadow)}
+  .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:120px;height:18px;background:#000;border-radius:0 0 12px 12px;opacity:.5;z-index:5}
+  .screen{position:absolute;inset:0;background:var(--blue);display:flex;align-items:center;justify-content:center}
+
+  /* App */
+  .app{
+    width:min(360px,92%);
+    padding:28px 16px 180px;   /* výchozí rezerva pro 1 tlačítko */
+    position:relative;
+  }
+  .app.two-actions{ padding-bottom:240px; } /* když se zobrazí Reset PIN, zvětšíme rezervu */
+
+  .logo{width:56px;height:56px;border-radius:28px;background:#fff;display:grid;place-items:center;margin:0 auto 12px;box-shadow:0 6px 24px rgba(0,0,0,.25);color:var(--blue);font-weight:900}
+  .headline{font-weight:800;font-size:18px;text-align:center;margin:6px 0 6px}
+  .sub{opacity:.9;text-align:center;font-size:14px;margin:0 0 10px}
+
+  .pin-dots{display:flex;gap:12px;justify-content:center;margin:12px 0 6px}
+  .dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.35);box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+  .dot.on{background:#fff;box-shadow:none}
+
+  .lockinfo{min-height:18px;text-align:center;font-size:13px;margin:4px 0 6px;opacity:.95}
+  .error{min-height:18px;text-align:center;margin:4px 0 8px;color:#ffd6d6}
+
+  @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+  .shake{animation:shake .35s linear}
+
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 auto;max-width:320px}
+  .key{user-select:none;cursor:pointer;background:rgba(255,255,255,.12);backdrop-filter:blur(2px);border-radius:18px;
+       text-align:center;padding:18px 0;font-size:22px;font-weight:800;transition:.15s}
+  .key:active{transform:scale(.98);background:rgba(255,255,255,.18)}
+  .key.icon{font-size:18px;font-weight:700}
+  .key.disabled{opacity:.35;pointer-events:none}
+
+  /* tlačítka nad devbarem */
+  .foot-cta{
+    position:absolute; left:16px; right:16px; bottom:80px; /* posun vanilkový */
+    display:flex; flex-direction:column; align-items:stretch; gap:12px;
+  }
+  .btn{ border:none; border-radius:999px; padding:14px 16px; font-weight:800; cursor:pointer }
+  .btn-orange{ background:#ff8a3d; color:#fff }   /* Zpět */
+  .btn-danger{ background:#ff5252; color:#fff }  /* Reset PIN */
+  .hidden{ display:none !important; }
+
+  /* spodní lišta (jen dropdown) */
+  .devbar{
+    position:absolute; left:10px; right:10px; bottom:6px;
+    display:flex; gap:8px; align-items:center; justify-content:flex-start;
+    background:rgba(0,0,0,.28); backdrop-filter:blur(2px);
+    border-radius:12px; padding:8px 10px; font-size:12px; color:#fff; z-index:10
+  }
+  .devbar select{ border-radius:8px; border:1px solid rgba(255,255,255,.35); background:#fff; color:#111; padding:6px 8px }
+
+  /* Fullscreen overlay (Heslo -> SMS) */
+  .overlay{
+    position:absolute; inset:0; background:var(--blue);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:9; padding:24px
+  }
+  .card{
+    width:min(320px,90%); background:rgba(255,255,255,.12);
+    backdrop-filter:blur(2px); border-radius:16px; padding:16px; text-align:center
+  }
+  .card h2{margin:6px 0 8px}
+  .card p{margin:0 0 10px;opacity:.95}
+  .card input{
+    width:100%; border:none; border-radius:10px; padding:12px 14px; margin:8px 0;
+    background:#fff; color:#111; font-size:16px
+  }
+  .card .row{display:flex;gap:8px;justify-content:center;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="phone">
+    <div class="screen">
+      <div class="app" id="app">
+        <div class="logo">RP</div>
+        <div class="headline" id="title">Nový PIN</div>
+        <div class="sub" id="subtitle">Zadejte 6 číslic.</div>
+
+        <div class="pin-dots" id="dots"></div>
+        <div class="lockinfo" id="lockInfo"></div>
+        <div class="error" id="err"></div>
+
+        <div class="pad" id="pad">
+          <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+          <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+          <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+          <div class="key icon" data-k="back">⌫</div><div class="key">0</div><div class="key icon" data-k="clear">⨯</div>
+        </div>
+
+        <!-- tlačítka nad devbarem -->
+        <div class="foot-cta">
+          <button id="btnBack" class="btn btn-orange">Zpět</button>
+          <button id="btnResetPin" class="btn btn-danger hidden">Resetovat PIN</button>
+        </div>
+      </div>
+
+      <!-- spodní lišta -->
+      <div class="devbar">
+        <span>Akce PIN:</span>
+        <select id="action">
+          <option value="new">Nový PIN</option>
+          <option value="change">Změnit PIN</option>
+        </select>
+      </div>
+    </div>
+    <div class="notch"></div>
+  </div>
+</div>
+
+<script>
+  // ====== Konstanta a stav ======
+  const PIN_LEN = 6;
+  let currentPin = "111111"; // demo „stávající PIN“
+  const REDIRECT_URL = "https://reloader158.github.io/Projekt-update/nastaveni_3.5.html";
+
+  const VERIFY_LIMIT = 3;
+  const LOCKOUT_SECS = 120;
+
+  let mode = "new";         // "new" | "change"
+  let phase = "new1";       // new: "new1" -> "new2"; change: "verifyOld" -> "new1" -> "new2"
+  let buf = "";
+  let tempNew = "";
+  let verifyFails = 0;
+
+  let lockedUntil = 0;
+  let lockTimerId = null;
+
+  // ====== Elementy ======
+  const title = document.getElementById('title');
+  const subtitle = document.getElementById('subtitle');
+  const dots = document.getElementById('dots');
+  const err = document.getElementById('err');
+  const lockInfo = document.getElementById('lockInfo');
+  const pad = document.getElementById('pad');
+  const actionSel = document.getElementById('action');
+  const btnResetPin = document.getElementById('btnResetPin');
+  const appEl = document.getElementById('app');
+
+  // ====== Helpers ======
+  function renderDots(){
+    dots.innerHTML = Array.from({length:PIN_LEN},(_,i)=>`<div class="dot ${i<buf.length?'on':''}"></div>`).join('');
+  }
+  function setHeader(t, s){ title.textContent=t; subtitle.textContent=s; }
+  function shake(){ appEl.classList.remove('shake'); void appEl.offsetWidth; appEl.classList.add('shake'); }
+  function clearError(){ err.textContent=""; }
+
+  function setPadDisabled(dis){
+    [...pad.children].forEach(k => k.classList.toggle('disabled', dis));
+  }
+
+  function applyFootPadding(){
+    // viditelnost resetu rozhoduje o paddingu .app
+    const two = !btnResetPin.classList.contains('hidden');
+    appEl.classList.toggle('two-actions', two);
+  }
+
+  function startLockout(){
+    lockedUntil = Date.now() + LOCKOUT_SECS*1000;
+    setPadDisabled(true);
+    tickLock();
+    lockTimerId = setInterval(tickLock, 250);
+  }
+  function tickLock(){
+    const remain = Math.max(0, Math.ceil((lockedUntil - Date.now())/1000));
+    const m = String(Math.floor(remain/60)).padStart(2,'0');
+    const s = String(remain%60).padStart(2,'0');
+    lockInfo.innerHTML = `Z bezpečnostních důvodů můžete zkusit znovu za <b>${m}:${s}</b>.`;
+    if(remain<=0){
+      clearInterval(lockTimerId); lockTimerId = null;
+      lockInfo.textContent = "";
+      setPadDisabled(false);
+      verifyFails = 0; // po cooldownu znovu od nuly
+      // reset zůstává viditelný (uživatel může zvolit reset), padding ponecháme
+    }
+  }
+
+  // ====== Přepnutí režimu ======
+  function setMode(m){
+    mode = m;
+    clearError(); lockInfo.textContent="";
+    buf=""; tempNew=""; verifyFails=0;
+    if(lockTimerId){ clearInterval(lockTimerId); lockTimerId=null; }
+    lockedUntil = 0; setPadDisabled(false);
+
+    // vždy schovej reset a přepni padding na 1 tlačítko
+    btnResetPin.classList.add('hidden');
+    applyFootPadding();
+
+    if(mode==='new'){
+      phase = "new1";
+      setHeader('Nový PIN','Zadejte 6 číslic.');
+    }else{
+      phase = "verifyOld";
+      setHeader('Změnit PIN','Zadejte stávající PIN.');
+    }
+    renderDots();
+  }
+
+  // ====== Logika klávesnice ======
+  function onKey(k){
+    if(lockedUntil > Date.now()) return; // během lockoutu ignoruj
+    if(k==='back'){ if(buf.length){buf=buf.slice(0,-1); renderDots();} return; }
+    if(k==='clear'){ buf=""; renderDots(); return; }
+    if(buf.length>=PIN_LEN) return;
+
+    buf += k;
+    renderDots();
+
+    if(buf.length===PIN_LEN){
+      if(mode==='new'){
+        handleNewPinFlow();
+      }else{
+        handleChangePinFlow();
+      }
+    }
+  }
+
+  function handleNewPinFlow(){
+    if(phase==='new1'){
+      tempNew = buf; buf=""; renderDots();
+      phase='new2'; setHeader('Potvrďte nový PIN','Zadejte stejný PIN znovu.');
+    }else if(phase==='new2'){
+      if(buf===tempNew){
+        currentPin = buf;
+        window.location.href = REDIRECT_URL;
+      }else{
+        err.textContent = 'PIN se neshoduje. Zadejte nový PIN znovu.';
+        shake();
+        buf=""; tempNew=""; renderDots();
+        phase='new1'; setHeader('Nový PIN','Zadejte 6 číslic.');
+      }
+    }
+  }
+
+  function handleChangePinFlow(){
+    if(phase==='verifyOld'){
+      if(buf===currentPin){
+        buf=""; tempNew=""; renderDots();
+        phase='new1'; setHeader('Nový PIN','Zadejte 6 číslic.');
+      }else{
+        verifyFails++; buf=""; renderDots();
+        err.textContent = `Chybný PIN (${verifyFails}/${VERIFY_LIMIT}).`;
+        shake();
+        if(verifyFails>=VERIFY_LIMIT){
+          btnResetPin.classList.remove('hidden');  // ukázat reset
+          applyFootPadding();                      // přidat spodní rezervu
+          startLockout();                          // spustit cooldown
+        }
+      }
+    }else if(phase==='new1'){
+      tempNew = buf; buf=""; renderDots();
+      phase='new2'; setHeader('Potvrďte nový PIN','Zadejte stejný PIN znovu.');
+    }else if(phase==='new2'){
+      if(buf===tempNew){
+        currentPin = buf;
+        window.location.href = REDIRECT_URL;
+      }else{
+        err.textContent = 'PIN se neshoduje. Začněte znovu.';
+        shake();
+        buf=""; tempNew=""; renderDots();
+        phase='new1'; setHeader('Nový PIN','Zadejte 6 číslic.');
+      }
+    }
+  }
+
+  pad.addEventListener('click', (e)=>{
+    const el = e.target.closest('.key'); if(!el) return;
+    const k = el.dataset.k || el.textContent.trim();
+    if(!/^\d$|^back$|^clear$/.test(k)) return;
+    onKey(k);
+  });
+
+  // ====== Zpět -> URL ======
+  document.getElementById('btnBack').addEventListener('click', ()=>{
+    window.location.href = REDIRECT_URL;
+  });
+
+  // ====== Reset zabezpečení (jen PIN) – Heslo -> SMS (overlay) ======
+  btnResetPin.addEventListener('click', ()=> showPasswordOverlay());
+
+  function showPasswordOverlay(){
+    const host = document.querySelector('.screen');
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `
+      <div class="card">
+        <h2>Ověření heslem</h2>
+        <p>Zadejte své přihlašovací heslo.</p>
+        <input type="password" id="pwInput" placeholder="Heslo">
+        <div class="row">
+          <button id="pwCancel" class="btn">Zrušit</button>
+          <button id="pwNext" class="btn btn-danger">Pokračovat</button>
+        </div>
+      </div>
+    `;
+    host.appendChild(ov);
+
+    ov.querySelector('#pwCancel').onclick = ()=> ov.remove();
+    ov.querySelector('#pwNext').onclick = ()=>{
+      const v = ov.querySelector('#pwInput').value.trim();
+      if(!v){ ov.querySelector('#pwInput').focus(); return; }
+      showSmsOverlay(ov);
+    };
+  }
+
+  function showSmsOverlay(prevOverlay){
+    prevOverlay.innerHTML = `
+      <div class="card">
+        <h2>Ověření SMS kódem</h2>
+        <p>Poslali jsme Vám kód. Zadejte jej prosím.</p>
+        <input type="text" id="smsInput" placeholder="SMS kód" inputmode="numeric" pattern="[0-9]*" maxlength="8">
+        <div class="row">
+          <button id="smsBack" class="btn">Zpět</button>
+          <button id="smsDone" class="btn btn-danger">Potvrdit</button>
+        </div>
+      </div>
+    `;
+    prevOverlay.querySelector('#smsBack').onclick = ()=> { prevOverlay.remove(); };
+    prevOverlay.querySelector('#smsDone').onclick = ()=>{
+      const v = prevOverlay.querySelector('#smsInput').value.trim();
+      if(!v){ prevOverlay.querySelector('#smsInput').focus(); return; }
+      // Reset PINu -> pokračuj na „Nový PIN“
+      currentPin = ""; // reset pouze PINu
+      verifyFails = 0;
+      if(lockTimerId){ clearInterval(lockTimerId); lockTimerId=null; }
+      lockedUntil = 0; lockInfo.textContent=""; setPadDisabled(false);
+      btnResetPin.classList.add('hidden'); applyFootPadding();
+      prevOverlay.remove();
+      setMode('new');
+      actionSel.value = 'new';
+    };
+  }
+
+  // ====== Dropdown akce ======
+  actionSel.addEventListener('change', ()=> setMode(actionSel.value));
+
+  // ====== Init ======
+  setMode('new');  // výchozí
+  renderDots();
+</script>
+</body>
+</html>
