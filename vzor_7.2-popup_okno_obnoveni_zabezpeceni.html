@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Obnova zabezpečení — Rychlá Peněženka</title>
+<style>
+  :root{
+    --blue:#2f74db; --blue-pressed:#2a66bf;
+    --accent:#ff7b00; --ok:#1c7a2e; --muted:#6b7280;
+    --card:#fff; --shadow:0 20px 60px rgba(0,0,0,.25);
+    --danger:#dc2626; --danger-pressed:#b91c1c;
+    --phone-w:390px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:#0f1115; display:grid; place-items:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; color:#111;
+  }
+
+  /* rám telefonu */
+  .stage{ width:min(var(--phone-w), 95vw); aspect-ratio:390/844; position:relative; isolation:isolate; max-height:95vh; }
+  .phone{ position:absolute; inset:0; border-radius:28px; box-shadow:0 18px 60px rgba(0,0,0,.45); overflow:hidden; background:#000; }
+  .screen{ position:absolute; inset:0; background:#000 url('prehled.png') center/cover no-repeat; }
+  .notch{ position:absolute; top:8px; left:50%; transform:translateX(-50%); width:120px; height:18px; background:#000; border-radius:0 0 12px 12px; opacity:.4; pointer-events:none; z-index:2; }
+
+  /* stmavení + popup */
+  .scrim{position:absolute; inset:0; background:rgba(0,0,0,.38); backdrop-filter:blur(2px);}
+  .wrap{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:18px}
+  .popup{width:min(560px, 92%); background:var(--card); border-radius:20px; box-shadow:var(--shadow); overflow:hidden;}
+  .hd{padding:18px 18px 12px; border-bottom:1px solid #eef0f4}
+  .title{font-size:20px; font-weight:800}
+  .sub{color:var(--muted); margin-top:6px; font-size:14px}
+  .bd{padding:14px 18px 10px}
+
+  /* řádek vycentrovaný do sloupce */
+  .row-center{
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    gap:10px; padding:22px 0;
+  }
+  .name{font-weight:800; font-size:18px}
+  .desc{font-size:13px; color:var(--muted); margin-top:4px}
+
+  .cta{border:none; border-radius:999px; padding:12px 16px; font-weight:800; cursor:pointer}
+  .cta-danger{background:var(--danger); color:#fff; box-shadow:0 6px 16px rgba(0,0,0,.18)}
+  .cta-danger:active{background:var(--danger-pressed)}
+
+  /* spodní akce – jen „Později“ uprostřed */
+  .actions{display:flex; justify-content:center; padding:14px 18px 18px}
+  .btn{min-width:60%; border:none; border-radius:999px; padding:14px; font-weight:800; cursor:pointer}
+  .btn-sec{background:#e9e9e9}
+
+  .toast{position:absolute; left:50%; bottom:22px; transform:translateX(-50%); background:#111; color:#fff; padding:8px 12px; border-radius:12px; opacity:0; transition:.25s; pointer-events:none; z-index:60; font-size:13px}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="phone">
+      <div class="screen"></div>
+      <div class="notch"></div>
+
+      <div class="scrim"></div>
+      <div class="wrap">
+        <div class="popup" id="popup">
+          <div class="hd">
+            <div class="title">Potřebujete obnovit zabezpečení?</div>
+            <div class="sub">
+              Jste přihlášeni <b>Heslem + SMS</b>. Můžete <b>obnovit nastavení</b> do výchozího stavu (Heslo + SMS).
+              Obnovení zároveň <b>vypne jednofaktorové ověřování</b>.
+            </div>
+          </div>
+
+          <div class="bd" id="list">
+            <!-- JEN OBNOVA – vycentrovaná, pod ní červené tlačítko -->
+            <div class="row-center">
+              <div class="name">Obnovit zabezpečení</div>
+              <div class="desc">Vrátit na výchozí režim <b>Heslo + SMS</b> a vypnout jednofaktor.</div>
+              <button class="cta cta-danger" id="btnResetDeep">Reset zabezpečení</button>
+            </div>
+          </div>
+
+          <!-- Spodní sekce: pouze Později uprostřed -->
+          <div class="actions">
+            <button class="btn btn-sec" id="btnLater">Později</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast">Hotovo</div>
+    </div>
+  </div>
+
+<script>
+  const toast = (msg)=>{
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1600);
+  };
+
+  const popup = document.getElementById('popup');
+
+  // „Později“ – jen zavře tento dialog (demo)
+  document.getElementById('btnLater').addEventListener('click', ()=>{
+    toast('Připomeneme později');
+    popup.style.display='none';
+  });
+
+  // Červený reset – přesměruje přímo na cílovou stránku.
+  // Přidávám hash #reset, aby cílová stránka mohla poznat a rovnou otevřít/fokusnout danou fázi.
+  document.getElementById('btnResetDeep').addEventListener('click', ()=>{
+    window.location.href = 'https://reloader158.github.io/Projekt-update/nastaveni_3.6.html#reset';
+  });
+</script>
+</body>
+</html>
