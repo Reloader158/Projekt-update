@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nastavení silného ověření — max 2 faktory</title>
+<style>
+  :root{
+    --blue:#2f74db; --blue-pressed:#2a66bf;
+    --bg:#f6f7fb; --card:#fff; --divider:#eee; --muted:#6a6a6a;
+    --switch-on:#ff7b00; --disabled:#cfcfcf;
+    --warn-bg:#fff8f2; --warn-br:#ffe1c2; --error:#c62828; --ok:#1c7a2e;
+    --orange:#ff8a3d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#111}
+  .page{max-width:480px;margin:0 auto;padding:16px}
+  h1{font-size:28px;margin:4px 0 14px}
+  .card{background:var(--card);border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.06);padding:16px;margin:12px 0}
+  .card h2{font-size:22px;margin:0 0 10px}
+  .info{background:#f4f6fb;border:1px solid #e6ecfb;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
+  .info strong{display:block;margin-bottom:4px}
+
+  .row{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;border-bottom:1px solid var(--divider)}
+  .row:last-child{border-bottom:none}
+  .left{min-width:0}
+  .title{font-size:16px;font-weight:600}
+  .sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .status{font-size:12px;margin-top:4px}
+  .status.bad{color:#b15a00}
+  .status.good{color:var(--ok)}
+  .right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+  .cta{background:#eaf1ff;color:#174796;border:none;border-radius:14px;padding:6px 10px;font-size:12px;cursor:pointer}
+  .cta:active{transform:translateY(1px)}
+  .ok{background:#e8f7ec;color:#0b6122;border:none;border-radius:14px;padding:6px 10px;font-size:12px;cursor:pointer}
+  .ok:active{transform:translateY(1px)}
+
+  .switch{position:relative;width:48px;height:26px;flex:0 0 auto}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;border-radius:26px;background:#ccc;transition:.3s}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .switch input:checked + .slider{background:var(--switch-on)}
+  .switch input:checked + .slider:before{transform:translateX(22px)}
+  .switch.disabled .slider{background:var(--disabled)}
+  .switch.disabled{opacity:.6;pointer-events:none}
+
+  .summary{background:#f4f4f4;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:14px}
+  .hint{background:var(--warn-bg);border:1px solid var(--warn-br);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13px}
+  .error{display:none;margin-top:10px;background:#fdecea;border:1px solid #f5c2c0;color:var(--error);border-radius:10px;padding:10px 12px;font-size:13px}
+
+  .buttons{display:flex;gap:10px;margin-top:12px}
+  .btn{flex:1;padding:12px 0;border:none;border-radius:22px;font-size:16px;font-weight:600;cursor:pointer}
+  .btn-primary{background:#bcd0f5;color:#fff;cursor:not-allowed}
+  .btn-primary.enabled{background:var(--blue);cursor:pointer;box-shadow:0 6px 16px rgba(47,116,219,.25)}
+  .btn-primary.enabled:active{background:var(--blue-pressed)}
+  .btn-back{background:var(--orange);color:#fff}
+
+  /* Overlay pro Heslo a SMS */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:999}
+  .modal{background:#fff;border-radius:20px;max-width:420px;width:90%;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+  .modal h3{margin:0 0 10px;text-align:center}
+  .modal .field{margin:10px 0}
+  .modal input{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:12px;font-size:16px;text-align:center}
+  .modal .row-btns{display:flex;gap:10px;margin-top:12px}
+  .modal .btn{margin:0;border-radius:14px}
+  .modal .btn-primary.enabled{background:var(--blue)}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Nastavení silného ověření</h1>
+
+  <div class="card">
+    <div class="info">
+      <strong>Jak to funguje</strong>
+      Můžete mít aktivní <b>nejvýše dva</b> různé faktory. Poprvé jsou zapnuté <b>Heslo</b> a <b>SMS kód</b>. Pokud chcete jinou dvojici, některý vypněte a zapněte jiný.
+    </div>
+
+    <!-- PIN -->
+    <div class="row" data-key="pin">
+      <div class="left">
+        <div class="title">PIN</div>
+        <div class="sub">Krátký osobní kód</div>
+        <div class="status bad">Nenastaveno</div>
+      </div>
+      <div class="right">
+        <button class="cta"  data-link="pin">Nastavit PIN</button>
+        <button class="ok"   data-ok="pin">OK</button>
+        <label class="switch disabled">
+          <input type="checkbox" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Face ID -->
+    <div class="row" data-key="face">
+      <div class="left">
+        <div class="title">Face ID</div>
+        <div class="sub">Rozpoznání obličeje</div>
+        <div class="status bad">Nenastaveno</div>
+      </div>
+      <div class="right">
+        <button class="cta" data-link="bio">Nastavit biometrii</button>
+        <button class="ok"  data-ok="face">OK</button>
+        <label class="switch disabled">
+          <input type="checkbox" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Otisk prstu -->
+    <div class="row" data-key="finger">
+      <div class="left">
+        <div class="title">Otisk prstu</div>
+        <div class="sub">Snímač otisku</div>
+        <div class="status bad">Nenastaveno</div>
+      </div>
+      <div class="right">
+        <button class="cta" data-link="bio">Nastavit biometrii</button>
+        <button class="ok"  data-ok="finger">OK</button>
+        <label class="switch disabled">
+          <input type="checkbox" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- SMS -->
+    <div class="row" data-key="sms">
+      <div class="left">
+        <div class="title">SMS kód</div>
+        <div class="sub">Kódy na ověřené číslo</div>
+        <div class="status good">Připraveno</div>
+      </div>
+      <div class="right">
+        <label class="switch">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Heslo -->
+    <div class="row" data-key="pwd">
+      <div class="left">
+        <div class="title">Heslo</div>
+        <div class="sub">Přihlašovací heslo</div>
+        <div class="status good">Připraveno</div>
+      </div>
+      <div class="right">
+        <label class="switch">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="hint" id="hint">
+      <div id="hint-current"><b>Aktuálně:</b> Heslo + SMS kód</div>
+      <div id="hint-info">Můžete změnit vypnutím jednoho a zapnutím jiného.</div>
+    </div>
+
+    <div class="error" id="error">Nelze aktivovat více než 2 faktory. Nejprve jeden vypněte.</div>
+
+    <div class="summary" id="summary"><b>Vybrané faktory:</b> Heslo + SMS kód</div>
+
+    <div class="buttons">
+      <button class="btn btn-back" id="btnBack">Zpět</button>
+      <button class="btn btn-primary enabled" id="saveBtn">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Overlays: Heslo a SMS -->
+<div id="pwdModal" class="overlay">
+  <div class="modal">
+    <h3>Potvrďte heslem</h3>
+    <div class="field"><input id="pwdInput" type="password" placeholder="Zadejte heslo (demo: 1)"></div>
+    <div class="row-btns">
+      <button id="pwdCancel" class="btn btn-back" type="button">Zrušit</button>
+      <button id="pwdNext" class="btn btn-primary enabled" type="button">Pokračovat</button>
+    </div>
+  </div>
+</div>
+
+<div id="smsModal" class="overlay">
+  <div class="modal">
+    <h3>Potvrzení přes SMS</h3>
+    <div class="field"><input id="smsCode" type="text" inputmode="numeric" placeholder="Zadejte kód (demo: 123456)"></div>
+    <div class="row-btns">
+      <button id="smsCancel" class="btn btn-back" type="button">Zpět</button>
+      <button id="smsOk" class="btn btn-primary enabled" type="button">Potvrdit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Stav připravenosti (biometrie je rozdělená na dva)
+  const state = { ready: { pin:false, face:false, finger:false, sms:true, pwd:true } };
+  const labels = { pin:'PIN', face:'Face ID', finger:'Otisk prstu', sms:'SMS kód', pwd:'Heslo' };
+
+  const rows = document.querySelectorAll('.row');
+  const summary = document.getElementById('summary');
+  const hintCurrent = document.getElementById('hint-current');
+  const errorBox = document.getElementById('error');
+  const saveBtn = document.getElementById('saveBtn');
+
+  // Přesměrování odkazů
+  document.getElementById('btnBack').addEventListener('click', ()=>{
+    window.location.href='https://reloader158.github.io/Projekt-update/nastaveni_3.6.html';
+  });
+  document.querySelectorAll('[data-link]').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      const t = e.currentTarget.dataset.link;
+      if(t==='pin'){
+        window.location.href='https://reloader158.github.io/Projekt-update/vzor_9.4-nastaveni_nebo_zmena_pinu_v_prihlasenem_stavu.html';
+      }else if(t==='bio'){
+        window.location.href='https://reloader158.github.io/Projekt-update/nastaveni_biometrie_5.1.html';
+      }
+    });
+  });
+
+  // OK tlačítka: odemknout a zapnout switch (pokud je místo a nedojde k biometrie+biometrie)
+  document.querySelectorAll('[data-ok]').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      const key = e.currentTarget.dataset.ok;
+      state.ready[key] = true;
+      const row = document.querySelector(`.row[data-key="${key}"]`);
+      const sw  = row.querySelector('.switch');
+      const inp = sw.querySelector('input');
+      const status = row.querySelector('.status');
+      sw.classList.remove('disabled'); inp.disabled=false;
+      status.textContent='Připraveno'; status.className='status good';
+
+      // zapni, pokud nepřekročí limit a neporuší biometrie+biometrie
+      const would = [...getSelectedKeys(), key];
+      if (new Set(would).size === would.length) { // není duplicitní v seznamu
+        if (allowedSelection(would)) inp.checked = true;
+      }
+      updateSummary();
+    });
+  });
+
+  function getSelectedKeys(){
+    return Array.from(document.querySelectorAll('.row input[type=checkbox]'))
+      .filter(i => !i.disabled && i.checked)
+      .map(i => i.closest('.row').dataset.key);
+  }
+
+  // pořadí v sumáři
+  const ORDER = ['pwd','sms','pin','face','finger'];
+  function ordered(keys){ return [...keys].sort((a,b)=> ORDER.indexOf(a)-ORDER.indexOf(b)); }
+  function selectionLabel(keys){ return ordered(keys).map(k=>labels[k]).join(' + '); }
+
+  // povolené kombinace (max 2 a ne face+finger současně)
+  function allowedSelection(keys){
+    if (keys.length > 2) return false;
+    const set = new Set(keys);
+    if (set.has('face') && set.has('finger')) return false;
+    return true;
+  }
+
+  function updateSummary(){
+    const keys = getSelectedKeys();
+    summary.innerHTML = '<b>Vybrané faktory:</b> ' + (keys.length ? selectionLabel(keys) : '—');
+
+    const ok = (keys.length === 2) && allowedSelection(keys);
+    saveBtn.classList.toggle('enabled', ok);
+    saveBtn.disabled = !ok;
+  }
+
+  function showError(rowEl, msg){
+    errorBox.textContent = msg || 'Nelze aktivovat více než 2 faktory. Nejprve jeden vypněte.';
+    errorBox.style.display = 'block';
+    const sw = rowEl.querySelector('.switch');
+    sw.classList.remove('shake'); void sw.offsetWidth; sw.classList.add('shake');
+    clearTimeout(showError._t);
+    showError._t = setTimeout(()=> errorBox.style.display='none', 5000);
+  }
+
+  function enforceLimits(e){
+    const input = e.target;
+    const row = input.closest('.row');
+
+    const keys = getSelectedKeys();
+    if (!input.checked) { updateSummary(); return; }
+
+    // zkus přidat aktuální
+    const newKeys = [...keys];
+    const k = row.dataset.key;
+    if (!newKeys.includes(k)) newKeys.push(k);
+
+    if (!allowedSelection(newKeys)){
+      input.checked = false;
+      const biomErr = (newKeys.includes('face') && newKeys.includes('finger'));
+      showError(row, biomErr ? 'Nelze vybrat současně Face ID i Otisk prstu.' : undefined);
+    }
+    updateSummary();
+  }
+
+  function updateUI(){
+    rows.forEach(row=>{
+      const key = row.dataset.key;
+      const sw = row.querySelector('.switch');
+      const input = sw.querySelector('input');
+      const status = row.querySelector('.status');
+      const ready = !!state.ready[key];
+
+      if(ready){
+        sw.classList.remove('disabled');
+        input.disabled = false;
+        status.textContent = 'Připraveno';
+        status.className = 'status good';
+      }else{
+        sw.classList.add('disabled');
+        input.checked = false;
+        input.disabled = true;
+        status.textContent = 'Nenastaveno';
+        status.className = 'status bad';
+      }
+    });
+    updateSummary();
+  }
+
+  // posluchače na switche
+  document.querySelectorAll('.row input[type=checkbox]').forEach(i=>{
+    i.addEventListener('change', enforceLimits);
+  });
+
+  // Uložit → Heslo → SMS → redirect
+  const pwdModal  = document.getElementById('pwdModal');
+  const pwdInput  = document.getElementById('pwdInput');
+  const pwdCancel = document.getElementById('pwdCancel');
+  const pwdNext   = document.getElementById('pwdNext');
+
+  const smsModal  = document.getElementById('smsModal');
+  const smsCode   = document.getElementById('smsCode');
+  const smsCancel = document.getElementById('smsCancel');
+  const smsOk     = document.getElementById('smsOk');
+
+  saveBtn.addEventListener('click', ()=>{
+    if(saveBtn.disabled) return;
+    pwdModal.style.display='flex';
+    setTimeout(()=>pwdInput.focus(),50);
+  });
+
+  pwdCancel.addEventListener('click', ()=> pwdModal.style.display='none');
+  pwdNext.addEventListener('click', ()=>{
+    if(pwdInput.value.trim()!=='1'){ pwdInput.focus(); return; }
+    pwdModal.style.display='none';
+    smsModal.style.display='flex';
+    setTimeout(()=>smsCode.focus(),50);
+  });
+
+  smsCancel.addEventListener('click', ()=>{
+    smsModal.style.display='none';
+  });
+  smsOk.addEventListener('click', ()=>{
+    if(smsCode.value.trim()!=='123456'){ smsCode.focus(); return; }
+    smsModal.style.display='none';
+    window.location.href='https://reloader158.github.io/Projekt-update/nastaveni_3.6.html';
+  });
+
+  // Reset na výchozí Heslo + SMS
+  function resetSelectionLocal(){
+    document.querySelectorAll('.row input[type=checkbox]').forEach(i=> i.checked = false);
+    document.querySelector('[data-key="pwd"] input').checked = true;
+    document.querySelector('[data-key="sms"] input').checked = true;
+    updateSummary();
+    hintCurrent.innerHTML = '<b>Aktuálně:</b> ' + selectionLabel(['pwd','sms']);
+  }
+
+  // INIT
+  updateUI();
+  resetSelectionLocal();
+</script>
+</body>
+</html>
