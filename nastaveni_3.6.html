@@ -365,39 +365,35 @@
   resetSelection();
 </script>
   <script>
-    (function () {
-      // Změň podle svého – selektor na tu „červenou akci“ na cílové stránce:
-      const SELECTOR = '#btnReset, button[data-action="reset"], .js-reset';
-    
-      function tryClickReset() {
-        const btn = document.querySelector(SELECTOR);
-        if (!btn) return false;
-        // volitelně: zvýraznit a scrollnout
-        btn.scrollIntoView({ behavior: 'instant', block: 'center' });
-        btn.click();
-    
-        // hash po kliknutí uklidíme, ať nezůstává v URL
-        history.replaceState(null, '', location.pathname + location.search);
-        return true;
-      }
-    
-      function runIfRequested() {
-        if (location.hash !== '#reset') return;
-        // někdy se tlačítko vykreslí až po animaci/UI initu → pár pokusů
-        let tries = 0;
-        const tick = () => {
-          if (tryClickReset() || tries > 50) return; // max ~5 s při 100 ms
-          tries++;
-          setTimeout(tick, 100);
-        };
-        tick();
-      }
-    
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', runIfRequested);
-      } else {
-        runIfRequested();
-      }
+  (function () {
+    // přidej #resetBtn (to je id tvého tlačítka „Reset zabezpečení“)
+    const SELECTOR = '#resetBtn, #btnReset, button[data-action="reset"], .js-reset';
+
+    function tryClickReset() {
+      const btn = document.querySelector(SELECTOR);
+      if (!btn) return false;
+      btn.scrollIntoView({ behavior: 'auto', block: 'center' }); // 'auto' je univerzální
+      btn.click();
+      history.replaceState(null, '', location.pathname + location.search);
+      return true;
+    }
+
+    function runIfRequested() {
+      if (location.hash !== '#reset') return;
+      let tries = 0;
+      const tick = () => {
+        if (tryClickReset() || tries > 50) return; // až ~5 s
+        tries++;
+        setTimeout(tick, 100);
+      };
+      tick();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', runIfRequested);
+    } else {
+      runIfRequested();
+    }
   })();
 </script>
 </body>
