@@ -14,8 +14,14 @@
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#111}
-  .page{max-width:480px;margin:0 auto;padding:16px}
+
+  /* ===== Obecný wrapper pro "stránky" (kroky) ===== */
+  .screen{min-height:100svh;display:flex;align-items:flex-start;justify-content:center;padding:16px}
+  .screen.hidden{display:none}
+  .page{width:100%;max-width:480px}
+
   h1{font-size:28px;margin:4px 0 14px}
+
   .card{background:var(--card);border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.06);padding:16px;margin:12px 0}
   .card h2{font-size:22px;margin:0 0 10px}
   .info{background:#f4f6fb;border:1px solid #e6ecfb;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
@@ -56,149 +62,176 @@
   .btn-primary.enabled:active{background:var(--blue-pressed)}
   .btn-back{background:var(--orange);color:#fff}
 
-  /* Overlay pro Heslo a SMS */
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:999}
-  .modal{background:#fff;border-radius:20px;max-width:420px;width:90%;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2)}
-  .modal h3{margin:0 0 10px;text-align:center}
-  .modal .field{margin:10px 0}
-  .modal input{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:12px;font-size:16px;text-align:center}
-  .modal .row-btns{display:flex;gap:10px;margin-top:12px}
-  .modal .btn{margin:0;border-radius:14px}
-  .modal .btn-primary.enabled{background:var(--blue)}
+  /* ===== Stránky 2 a 3 (Heslo/SMS) ===== */
+  .step-card{background:#fff;border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.08);padding:20px;margin-top:12px}
+  .step-card h2{margin:0 0 6px}
+  .desc{color:#555;margin:0 0 12px;font-size:14px}
+  .field{margin:12px 0}
+  .field input{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:12px;font-size:16px;text-align:center}
+
+  /* ===== Shake animace při chybě ===== */
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    15% { transform: translateX(-6px); }
+    30% { transform: translateX(6px); }
+    45% { transform: translateX(-5px); }
+    60% { transform: translateX(5px); }
+    75% { transform: translateX(-3px); }
+    90% { transform: translateX(3px); }
+  }
+  .row.shake { animation: shake .6s cubic-bezier(.36,.07,.19,.97); }
+
 </style>
 </head>
 <body>
-<div class="page">
-  <h1>Nastavení silného ověření</h1>
 
-  <div class="card">
-    <div class="info">
-      <strong>Jak to funguje</strong>
-      Můžete mít aktivní <b>nejvýše dva</b> různé faktory. Poprvé jsou zapnuté <b>Heslo</b> a <b>SMS kód</b>. Pokud chcete jinou dvojici, některý vypněte a zapněte jiný.
-    </div>
+<!-- ===== KROK 1: HLAVNÍ NASTAVENÍ ===== -->
+<section id="screen-main" class="screen">
+  <div class="page">
+    <h1>Nastavení silného ověření</h1>
 
-    <!-- PIN -->
-    <div class="row" data-key="pin">
-      <div class="left">
-        <div class="title">PIN</div>
-        <div class="sub">Krátký osobní kód</div>
-        <div class="status bad">Nenastaveno</div>
+    <div class="card">
+      <div class="info">
+        <strong>Jak to funguje</strong>
+        Můžete mít aktivní <b>nejvýše dva</b> různé faktory. Poprvé jsou zapnuté <b>Heslo</b> a <b>SMS kód</b>. Pokud chcete jinou dvojici, některý vypněte a zapněte jiný.
       </div>
-      <div class="right">
-        <button class="cta"  data-link="pin">Nastavit PIN</button>
-        <button class="ok"   data-ok="pin">OK</button>
-        <label class="switch disabled">
-          <input type="checkbox" disabled>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
 
-    <!-- Face ID -->
-    <div class="row" data-key="face">
-      <div class="left">
-        <div class="title">Face ID</div>
-        <div class="sub">Rozpoznání obličeje</div>
-        <div class="status bad">Nenastaveno</div>
+      <!-- PIN -->
+      <div class="row" data-key="pin">
+        <div class="left">
+          <div class="title">PIN</div>
+          <div class="sub">Krátký osobní kód</div>
+          <div class="status bad">Nenastaveno</div>
+        </div>
+        <div class="right">
+          <button class="cta"  data-link="pin">Nastavit PIN</button>
+          <button class="ok"   data-ok="pin">OK</button>
+          <label class="switch disabled">
+            <input type="checkbox" disabled>
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
-      <div class="right">
-        <button class="cta" data-link="bio">Nastavit biometrii</button>
-        <button class="ok"  data-ok="face">OK</button>
-        <label class="switch disabled">
-          <input type="checkbox" disabled>
-          <span class="slider"></span>
-        </label>
+
+      <!-- Face ID -->
+      <div class="row" data-key="face">
+        <div class="left">
+          <div class="title">Face ID</div>
+          <div class="sub">Rozpoznání obličeje</div>
+          <div class="status bad">Nenastaveno</div>
+        </div>
+        <div class="right">
+          <button class="cta" data-link="bio">Nastavit biometrii</button>
+          <button class="ok"  data-ok="face">OK</button>
+          <label class="switch disabled">
+            <input type="checkbox" disabled>
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
-    </div>
 
-    <!-- Otisk prstu -->
-    <div class="row" data-key="finger">
-      <div class="left">
-        <div class="title">Otisk prstu</div>
-        <div class="sub">Snímač otisku</div>
-        <div class="status bad">Nenastaveno</div>
+      <!-- Otisk prstu -->
+      <div class="row" data-key="finger">
+        <div class="left">
+          <div class="title">Otisk prstu</div>
+          <div class="sub">Snímač otisku</div>
+          <div class="status bad">Nenastaveno</div>
+        </div>
+        <div class="right">
+          <button class="cta" data-link="bio">Nastavit biometrii</button>
+          <button class="ok"  data-ok="finger">OK</button>
+          <label class="switch disabled">
+            <input type="checkbox" disabled>
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
-      <div class="right">
-        <button class="cta" data-link="bio">Nastavit biometrii</button>
-        <button class="ok"  data-ok="finger">OK</button>
-        <label class="switch disabled">
-          <input type="checkbox" disabled>
-          <span class="slider"></span>
-        </label>
+
+      <!-- SMS -->
+      <div class="row" data-key="sms">
+        <div class="left">
+          <div class="title">SMS kód</div>
+          <div class="sub">Kódy na ověřené číslo</div>
+          <div class="status good">Připraveno</div>
+        </div>
+        <div class="right">
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
-    </div>
 
-    <!-- SMS -->
-    <div class="row" data-key="sms">
-      <div class="left">
-        <div class="title">SMS kód</div>
-        <div class="sub">Kódy na ověřené číslo</div>
-        <div class="status good">Připraveno</div>
+      <!-- Heslo -->
+      <div class="row" data-key="pwd">
+        <div class="left">
+          <div class="title">Heslo</div>
+          <div class="sub">Přihlašovací heslo</div>
+          <div class="status good">Připraveno</div>
+        </div>
+        <div class="right">
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
-      <div class="right">
-        <label class="switch">
-          <input type="checkbox" checked>
-          <span class="slider"></span>
-        </label>
+
+      <div class="hint" id="hint">
+        <div id="hint-current"><b>Aktuálně:</b> Heslo + SMS kód</div>
+        <div id="hint-info">Můžete změnit vypnutím jednoho a zapnutím jiného.</div>
       </div>
-    </div>
 
-    <!-- Heslo -->
-    <div class="row" data-key="pwd">
-      <div class="left">
-        <div class="title">Heslo</div>
-        <div class="sub">Přihlašovací heslo</div>
-        <div class="status good">Připraveno</div>
+      <div class="error" id="error">Nelze aktivovat více než 2 faktory. Nejprve jeden vypněte.</div>
+
+      <div class="summary" id="summary"><b>Vybrané faktory:</b> Heslo + SMS kód</div>
+
+      <div class="buttons">
+        <button class="btn btn-back" id="btnBack">Zpět</button>
+        <button class="btn btn-primary enabled" id="saveBtn">Uložit</button>
       </div>
-      <div class="right">
-        <label class="switch">
-          <input type="checkbox" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-
-    <div class="hint" id="hint">
-      <div id="hint-current"><b>Aktuálně:</b> Heslo + SMS kód</div>
-      <div id="hint-info">Můžete změnit vypnutím jednoho a zapnutím jiného.</div>
-    </div>
-
-    <div class="error" id="error">Nelze aktivovat více než 2 faktory. Nejprve jeden vypněte.</div>
-
-    <div class="summary" id="summary"><b>Vybrané faktory:</b> Heslo + SMS kód</div>
-
-    <div class="buttons">
-      <button class="btn btn-back" id="btnBack">Zpět</button>
-      <button class="btn btn-primary enabled" id="saveBtn">Uložit</button>
-    </div>
-  </div>
-</div>
-
-<!-- Overlays: Heslo a SMS -->
-<div id="pwdModal" class="overlay">
-  <div class="modal">
-    <h3>Potvrďte heslem</h3>
-    <div class="field"><input id="pwdInput" type="password" placeholder="Zadejte heslo (demo: 1)"></div>
-    <div class="row-btns">
-      <button id="pwdCancel" class="btn btn-back" type="button">Zrušit</button>
-      <button id="pwdNext" class="btn btn-primary enabled" type="button">Pokračovat</button>
     </div>
   </div>
-</div>
+</section>
 
-<div id="smsModal" class="overlay">
-  <div class="modal">
-    <h3>Potvrzení přes SMS</h3>
-    <div class="field"><input id="smsCode" type="text" inputmode="numeric" placeholder="Zadejte kód (demo: 123456)"></div>
-    <div class="row-btns">
-      <button id="smsCancel" class="btn btn-back" type="button">Zpět</button>
-      <button id="smsOk" class="btn btn-primary enabled" type="button">Potvrdit</button>
+<!-- ===== KROK 2: HESLO (plnohodnotná stránka) ===== -->
+<section id="screen-pwd" class="screen hidden" aria-hidden="true">
+  <div class="page">
+    <h1>Ověření účtu</h1>
+    <div class="step-card">
+      <h2>1/2 — Zadejte heslo</h2>
+      <p class="desc">Z bezpečnostních důvodů potvrďte změnu výběru faktorů svým heslem.</p>
+      <div class="field">
+        <input id="pwdInput" type="password" placeholder="Zadejte heslo (demo: 1)">
+      </div>
+      <div class="buttons">
+        <button class="btn btn-back" id="pwdBack">Zpět</button>
+        <button class="btn btn-primary enabled" id="pwdNext">Pokračovat</button>
+      </div>
     </div>
   </div>
-</div>
+</section>
+
+<!-- ===== KROK 3: SMS (plnohodnotná stránka) ===== -->
+<section id="screen-sms" class="screen hidden" aria-hidden="true">
+  <div class="page">
+    <h1>Ověření účtu</h1>
+    <div class="step-card">
+      <h2>2/2 — Potvrzení přes SMS</h2>
+      <p class="desc">Na vaše ověřené číslo jsme poslali kód. Zadejte jej pro dokončení změny.</p>
+      <div class="field">
+        <input id="smsCode" type="text" inputmode="numeric" placeholder="Zadejte kód (demo: 123456)">
+      </div>
+      <div class="buttons">
+        <button class="btn btn-back" id="smsBack">Zpět</button>
+        <button class="btn btn-primary enabled" id="smsOk">Potvrdit</button>
+      </div>
+    </div>
+  </div>
+</section>
 
 <script>
-  // Stav připravenosti (biometrie je rozdělená na dva)
+  // ===== Stav připravenosti (biometrie je rozdělená na dva) =====
   const state = { ready: { pin:false, face:false, finger:false, sms:true, pwd:true } };
   const labels = { pin:'PIN', face:'Face ID', finger:'Otisk prstu', sms:'SMS kód', pwd:'Heslo' };
 
@@ -208,7 +241,23 @@
   const errorBox = document.getElementById('error');
   const saveBtn = document.getElementById('saveBtn');
 
-  // Přesměrování odkazů
+  // ===== Navigace mezi "stránkami" =====
+  const screens = {
+    main: document.getElementById('screen-main'),
+    pwd:  document.getElementById('screen-pwd'),
+    sms:  document.getElementById('screen-sms'),
+  };
+
+  function go(to){
+    Object.values(screens).forEach(s => s.classList.add('hidden'));
+    screens[to].classList.remove('hidden');
+    window.scrollTo({top:0, behavior:'instant'});
+    // focus do políčka, když dává smysl
+    if (to==='pwd') setTimeout(()=>document.getElementById('pwdInput').focus(), 50);
+    if (to==='sms') setTimeout(()=>document.getElementById('smsCode').focus(), 50);
+  }
+
+  // Přesměrování odkazů v hlavním kroku
   document.getElementById('btnBack').addEventListener('click', ()=>{
     window.location.href='https://reloader158.github.io/Projekt-update/nastaveni_3.6.html';
   });
@@ -223,7 +272,7 @@
     });
   });
 
-  // OK tlačítka: odemknout a zapnout switch (pokud je místo a nedojde k biometrie+biometrie)
+  // OK tlačítka: odemknout a zapnout switch (pokud je místo a neporuší face+finger)
   document.querySelectorAll('[data-ok]').forEach(btn=>{
     btn.addEventListener('click',(e)=>{
       const key = e.currentTarget.dataset.ok;
@@ -237,7 +286,7 @@
 
       // zapni, pokud nepřekročí limit a neporuší biometrie+biometrie
       const would = [...getSelectedKeys(), key];
-      if (new Set(would).size === would.length) { // není duplicitní v seznamu
+      if (new Set(would).size === would.length) {
         if (allowedSelection(would)) inp.checked = true;
       }
       updateSummary();
@@ -275,8 +324,15 @@
   function showError(rowEl, msg){
     errorBox.textContent = msg || 'Nelze aktivovat více než 2 faktory. Nejprve jeden vypněte.';
     errorBox.style.display = 'block';
-    const sw = rowEl.querySelector('.switch');
-    sw.classList.remove('shake'); void sw.offsetWidth; sw.classList.add('shake');
+
+    // Trigger shake na celé řádce
+    rowEl.classList.remove('shake');
+    // reflow
+    void rowEl.offsetWidth;
+    rowEl.classList.add('shake');
+
+    rowEl.addEventListener('animationend', ()=> rowEl.classList.remove('shake'), {once:true});
+
     clearTimeout(showError._t);
     showError._t = setTimeout(()=> errorBox.style.display='none', 5000);
   }
@@ -330,37 +386,37 @@
     i.addEventListener('change', enforceLimits);
   });
 
-  // Uložit → Heslo → SMS → redirect
-  const pwdModal  = document.getElementById('pwdModal');
+  // ===== Uložit → stránka Heslo → stránka SMS → redirect =====
   const pwdInput  = document.getElementById('pwdInput');
-  const pwdCancel = document.getElementById('pwdCancel');
+  const pwdBack   = document.getElementById('pwdBack');
   const pwdNext   = document.getElementById('pwdNext');
 
-  const smsModal  = document.getElementById('smsModal');
   const smsCode   = document.getElementById('smsCode');
-  const smsCancel = document.getElementById('smsCancel');
+  const smsBack   = document.getElementById('smsBack');
   const smsOk     = document.getElementById('smsOk');
 
   saveBtn.addEventListener('click', ()=>{
     if(saveBtn.disabled) return;
-    pwdModal.style.display='flex';
-    setTimeout(()=>pwdInput.focus(),50);
+    go('pwd');
   });
 
-  pwdCancel.addEventListener('click', ()=> pwdModal.style.display='none');
+  pwdBack.addEventListener('click', ()=> go('main'));
   pwdNext.addEventListener('click', ()=>{
-    if(pwdInput.value.trim()!=='1'){ pwdInput.focus(); return; }
-    pwdModal.style.display='none';
-    smsModal.style.display='flex';
-    setTimeout(()=>smsCode.focus(),50);
+    if(pwdInput.value.trim()!=='1'){ 
+      pwdInput.focus();
+      pwdInput.select?.();
+      return; 
+    }
+    go('sms');
   });
 
-  smsCancel.addEventListener('click', ()=>{
-    smsModal.style.display='none';
-  });
+  smsBack.addEventListener('click', ()=> go('pwd'));
   smsOk.addEventListener('click', ()=>{
-    if(smsCode.value.trim()!=='123456'){ smsCode.focus(); return; }
-    smsModal.style.display='none';
+    if(smsCode.value.trim()!=='123456'){ 
+      smsCode.focus(); 
+      smsCode.select?.();
+      return; 
+    }
     window.location.href='https://reloader158.github.io/Projekt-update/nastaveni_3.6.html';
   });
 
