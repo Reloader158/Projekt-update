@@ -436,6 +436,14 @@
       justify-content: center;
       box-shadow: 0 0 0 2px #ffffff;  /* bílý okraj kolem tečky */
     }
+    
+    .menu-item.notifications.disabled {
+      pointer-events: none;   /* 🔒 nekliká se */
+    }
+
+    .menu-item.notifications.enabled {
+      cursor: pointer;        /* 🔓 klikací */
+    }
 
   </style>
 </head>
@@ -498,7 +506,7 @@
             </div>
           </div>
 
-          <div class="menu-item">
+          <div class="menu-item notifications disabled" id="notificationsRow">
             <div class="menu-left">
               <div class="menu-icon bell">
                 <i class="fa-solid fa-bell"></i>
@@ -643,6 +651,7 @@
     const noticeBox    = document.getElementById("noticeBox");
     const balanceAmountEl = document.getElementById("balanceAmount");
     const notifBadge      = document.getElementById("notifBadge");
+    const notificationsRow = document.getElementById("notificationsRow");
 
     // Zůstatek – vezmeme číslo z textu "262.12 CZK"
     let currentBalance = parseFloat(
@@ -681,8 +690,19 @@
       notifCount += 1;
       notifBadge.textContent = notifCount;
       notifBadge.style.display = "flex";
+      enableNotificationsRow();      // 🔥 odemknout řádek Notifikace
     }
+    
+    function enableNotificationsRow() {
+      if (!notificationsRow) return;
+      notificationsRow.classList.remove("disabled");
+      notificationsRow.classList.add("enabled");
 
+      // při prvním odemknutí nastavíme click na stránku notifikací
+      notificationsRow.addEventListener("click", () => {
+        window.location.href = "notifikace.html"; // název tvého nového souboru
+      }, { once: true });
+    }
 
     // umožní psaní jen číslic + backspace, ostatní blokuje
     codeInput.addEventListener("keydown", (e) => {
@@ -836,7 +856,7 @@
       if (window.history.length > 1) {
         window.history.back();
       } else {
-        window.location.href = "04.3_uprava_sekce_vlozit_penize.html";
+        window.location.href = "https://reloader158.github.io/Projekt-update/prehled.html";
       }
     });
 
