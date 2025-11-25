@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>RP – Vložit peníze (On-line hotovost)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- FontAwesome ikony -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer">
+
+  <style>
+    :root {
+      --bottom-bar-height: 65px;
+      --bottom-icon-box: 60px;
+      --bottom-icon-font: 50px;
+      --blue: #2f74d8;
+      --orange: #ff8a2b;
+      --green: #00b28b;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;   /* aby padding nezvětšoval šířku přes 100% */
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden; /* posouvá se jen obsah mobilu */
+    }
+
+    /* Mobilní rámeček */
+    .mobile-frame {
+      width: 420px;
+      height: 95vh;
+      max-height: 860px;
+      border-radius: 36px;
+      background: #000;
+      box-shadow: 0 22px 50px rgba(0,0,0,0.7);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #f4f4f4;
+      height: 100%;
+    }
+
+    /* HORNÍ MODRÁ LIŠTA */
+    .app-header {
+      height: 70px;
+      background: #2876de;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      flex-shrink: 0;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+    }
+
+    .logo-img {
+      height: 50px;
+    }
+
+    .hamburger {
+      width: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .hamburger span {
+      height: 3px;
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    /* HLAVNÍ OBSAH */
+    .app-content {
+      flex: 1 1 auto;
+      overflow-y: auto;        /* hlavní scrollbar */
+      overflow-x: hidden;      /* 🔥 zakáže horizontální scroll */
+      padding: 14px 14px 10px;
+      background: #f3f5f7;
+    }
+
+    /* Zůstatek */
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #e5e5e5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 14px;
+      color: #9e9e9e;
+      font-size: 26px;
+      cursor: pointer;
+    }
+
+    .card-text-main {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .card-label {
+      font-size: 18px;
+      color: #b5b5b5;
+    }
+
+    .card-amount {
+      font-size: 22px;
+      color: #ff7a28;
+      font-weight: 600;
+    }
+
+    @keyframes spin-refresh {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .card-icon i.spinning {
+      animation: spin-refresh 0.35s linear 3;
+    }
+
+    /* Řádky menu */
+    .menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .menu-item {
+      background: #fff;
+      border-radius: 18px;
+      padding: 12px 18px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+    }
+
+    .menu-left {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 16px;
+    }
+
+    .menu-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 26px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .menu-icon.search { background: #2f7eea; }
+    .menu-icon.coins  { background: #2fb2ff; }
+    .menu-icon.minus  { background: #32d1a2; }
+    .menu-icon.bell   { background: #ff8b39; }
+
+    .menu-label {
+      font-size: 18px;
+      color: #111;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    /* PANEL „Vložit peníze“ */
+    .placeholder-area {
+      margin-top: 18px;
+      background: #ffffff;
+      border-radius: 18px 18px 0 0;
+      min-height: 420px;             /* aby vznikl hlavní scroll */
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 4px;
+    }
+
+    .placeholder-inner {
+      flex: 1;
+      border-radius: inherit;
+      padding: 0;
+      overflow: hidden;              /* vnitřek má vlastní scroll */
+    }
+
+    .deposit-panel {
+      height: 100%;
+      background: #ffffff;
+      border-radius: 18px 18px 0 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .deposit-header {
+      padding: 16px 20px 10px;
+      font-size: 19px;
+      font-weight: 600;
+      border-bottom: 1px solid #f0f0f0;
+      flex: 0 0 auto;
+    }
+
+    .deposit-scroll {
+      flex: 1 1 auto;
+      overflow-y: auto;              /* druhý scrollbar jen pro panel */
+      overflow-x: hidden;            /* 🔥 jistota, že nic nepoleze do šířky */
+      padding: 22px 24px 22px;
+      text-align: center;
+    }
+
+    /* ŘÁDEK S KÓDEM + IKONY */
+    .code-row {
+      position: relative;
+      margin-bottom: 18px;
+    }
+
+    .code-input {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid #dddddd;
+      padding: 9px 40px;
+      font-size: 20px;
+      text-align: center;
+      outline: none;
+      background: #ffffff;
+      font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .code-input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(47,116,216,0.15);
+    }
+
+    .code-status-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    #codeIconError {
+      right: 10px;
+      background: #e74c3c;
+    }
+
+    #codeIconSuccess {
+      right: 10px;
+      background: #27ae60;
+    }
+
+    /* STATUS BANNER */
+    .status-banner {
+      display: none;
+      margin-bottom: 18px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: left;
+      background: #C9B3FF;
+      color: #3e2d7a;
+    }
+
+    .status-banner.visible {
+      display: block;
+    }
+
+    /* TLAČÍTKA */
+    .btn-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .btn {
+      display: inline-block;
+      text-align: center;
+      width: 100%;           /* 🔥 všechny stejně široké */
+      max-width: 320px;      /* rozumné maximum */
+      padding: 11px 22px;
+      border-radius: 999px;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      transition: transform 0.05s ease, opacity 0.15s ease;
+      order: 1;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-orange { background: #ff8a2b; color: #ffffff; }
+    .btn-green  { background: var(--green); }
+    .btn-blue   { background: var(--blue); }
+
+    .btn-disabled {
+      opacity: 0.45;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* ORANŽOVÝ INFO BOX DOLE */
+    .notice-box {
+      margin-top: 10px;
+      background: var(--orange);
+      border-radius: 26px;
+      padding: 16px 20px 18px;
+      color: #ffffff;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .notice-box strong {
+      font-weight: 700;
+    }
+
+    /* SPODNÍ MODRÁ LIŠTA */
+    .bottom-bar {
+      height: var(--bottom-bar-height);
+      background: #2876de;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    .bottom-link {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .bottom-icon-inner {
+      width: var(--bottom-icon-box);
+      height: var(--bottom-icon-box);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: var(--bottom-icon-font);
+    }
+
+    .bottom-icon-inner.plus-icon {
+      background: transparent;
+    }
+
+    .plus-box {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .plus-box i {
+      color: #2876de;
+      font-size: 26px;
+    }
+
+    .notif-badge {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #ff3b30;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      display: none;              /* 🔥 defaultně schovaná */
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px #ffffff;  /* bílý okraj kolem tečky */
+    }
+
+  </style>
+</head>
+<body>
+  <div class="mobile-frame">
+    <div class="app-screen">
+
+      <!-- HORNÍ LIŠTA -->
+      <header class="app-header">
+        <div class="logo-wrap">
+          <img src="https://rychlapenezenka.cz/images/rp_cerna-bila.png" alt="RP logo" class="logo-img">
+        </div>
+        <div class="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </header>
+
+      <!-- OBSAH: zůstatek + 4 řádky + panel -->
+      <main class="app-content">
+
+        <!-- Zůstatek -->
+        <section class="card">
+          <div class="card-icon" id="balanceRefresh">
+            <i class="fa-solid fa-arrows-rotate" id="balanceRefreshIcon"></i>
+          </div>
+          <div class="card-text-main">
+            <div class="card-label">Váš zůstatek</div>
+            <div class="card-amount" id="balanceAmount">262.12 CZK</div>
+          </div>
+        </section>
+
+        <!-- Menu položky -->
+        <section class="menu-list">
+          <div class="menu-item">
+            <div class="menu-left">
+              <div class="menu-icon search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </div>
+              <div class="menu-label">Přehled</div>
+            </div>
+          </div>
+
+          <div class="menu-item">
+            <div class="menu-left">
+              <div class="menu-icon coins">
+                <i class="fa-solid fa-coins"></i>
+              </div>
+              <div class="menu-label">Transakce</div>
+            </div>
+          </div>
+
+          <div class="menu-item">
+            <div class="menu-left">
+              <div class="menu-icon minus">
+                <i class="fa-solid fa-credit-card"></i>
+              </div>
+              <div class="menu-label">Karty</div>
+            </div>
+          </div>
+
+          <div class="menu-item">
+            <div class="menu-left">
+              <div class="menu-icon bell">
+                <i class="fa-solid fa-bell"></i>
+                  <span class="notif-badge" id="notifBadge">1</span>
+              </div>
+              <div class="menu-label">Notifikace</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PANEL VLOŽIT PENÍZE – ON-LINE HOTOVOST -->
+        <section class="placeholder-area">
+          <div class="placeholder-inner">
+            <div class="deposit-panel">
+              <div class="deposit-header">Vložit peníze</div>
+
+              <div class="deposit-scroll">
+
+                <!-- KÓD + IKONY -->
+                <div class="code-row">
+                  <input
+                    id="codeInput"
+                    class="code-input"
+                    type="text"
+                    autocomplete="off"
+                    inputmode="numeric"
+                    spellcheck="false"
+                  >
+                  <div class="code-status-icon" id="codeIconError">
+                    <i class="fa-solid fa-exclamation"></i>
+                  </div>
+                  <div class="code-status-icon" id="codeIconSuccess">
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                </div>
+
+                <!-- BANNER S CHYBOU / ÚSPĚCHEM -->
+                <div class="status-banner" id="statusBanner"></div>
+
+                <!-- TLAČÍTKA -->
+                <div class="btn-row">
+                  <button class="btn btn-orange btn-disabled" id="btnUse">
+                    Použít kontrolní kód k dobití
+                  </button>
+
+                  <button class="btn btn-green" id="btnQr">
+                    Vygenerovat QR kód pro dobití
+                  </button>
+
+                  <button class="btn btn-blue" id="btnBack">
+                    Zpět
+                  </button>
+
+                  <!-- Toto tlačítko se používá ve stavech error/success jako "Zadat nový kód..." -->
+                  <button class="btn btn-orange" id="btnSecondary" style="display:none;">
+                    Zadat nový kód k dobití
+                  </button>
+                </div>
+
+                <!-- ORANŽOVÝ INFO BOX -->
+                <div class="notice-box" id="noticeBox">
+                  <strong>Toto se zobrazí uživateli při zadávání kupónu mezi 23:55–00:05</strong><br><br>
+                  <strong>Vážený kliente</strong>, právě probíhá pravidelná údržba systému.
+                  Dobití peněženky <strong>kupónem</strong> bude opět
+                  <strong>dostupné od 00:05:00</strong>.
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- SPODNÍ LIŠTA -->
+      <nav class="bottom-bar">
+        <!-- 1 – převody -->
+        <a href="prehled.html" class="bottom-link">
+          <div class="bottom-icon-inner">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+          </div>
+        </a>
+
+        <!-- 2 – plus = návrat na hlavní přehled -->
+        <a href="prehled.html" class="bottom-link">
+          <div class="bottom-icon-inner plus-icon">
+            <div class="plus-box">
+              <i class="fa-solid fa-plus"></i>
+            </div>
+          </div>
+        </a>
+
+        <!-- 3 – transakce -->
+        <a href="transakce.html" class="bottom-link">
+          <div class="bottom-icon-inner">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+        </a>
+
+        <!-- 4 – spoření -->
+        <a href="sporeni.html" class="bottom-link">
+          <div class="bottom-icon-inner">
+            <i class="fa-solid fa-piggy-bank"></i>
+          </div>
+        </a>
+      </nav>
+
+    </div>
+  </div>
+
+  <script>
+    // Animace refresh ikonky u zůstatku
+    const refreshIcon = document.getElementById('balanceRefreshIcon');
+    const refreshWrapper = document.getElementById('balanceRefresh');
+
+    function spinRefresh() {
+      if (refreshIcon.classList.contains('spinning')) return;
+      refreshIcon.classList.add('spinning');
+      refreshIcon.addEventListener(
+        'animationend',
+        () => { refreshIcon.classList.remove('spinning'); },
+        { once: true }
+      );
+    }
+
+    refreshWrapper.addEventListener('click', spinRefresh);
+
+    // ---- LOGIKA PRO KÓD KUPÓNU ----
+    const MAX_DIGITS = 16;
+    const CORRECT_CODE_DIGITS = "1111111111111111"; // můžeš změnit
+
+    let codeDigits = "";
+
+    const codeInput    = document.getElementById("codeInput");
+    const iconError    = document.getElementById("codeIconError");
+    const iconSuccess  = document.getElementById("codeIconSuccess");
+    const statusBanner = document.getElementById("statusBanner");
+    const btnUse       = document.getElementById("btnUse");
+    const btnQr        = document.getElementById("btnQr");
+    const btnSecondary = document.getElementById("btnSecondary");
+    const btnBack      = document.getElementById("btnBack");
+    const noticeBox    = document.getElementById("noticeBox");
+    const balanceAmountEl = document.getElementById("balanceAmount");
+    const notifBadge      = document.getElementById("notifBadge");
+
+    // Zůstatek – vezmeme číslo z textu "262.12 CZK"
+    let currentBalance = parseFloat(
+      balanceAmountEl.textContent.replace("CZK", "").trim()
+    );
+
+    // Počet nových notifikací (badge číslo)
+    let notifCount = 0;
+
+    // Kupon už byl jednou úspěšně použit?
+    let couponRedeemed = false;
+
+    function formatMasked(digs) {
+      const padded = digs + "_".repeat(MAX_DIGITS - digs.length);
+      const groups = padded.match(/.{1,4}/g) || [];
+      return groups.join("  ");
+    }
+
+    function refreshInput() {
+      codeInput.value = formatMasked(codeDigits);
+    }
+
+    function updateButtonState() {
+      if (codeDigits.length === MAX_DIGITS) {
+        btnUse.classList.remove("btn-disabled");
+      } else {
+        btnUse.classList.add("btn-disabled");
+      }
+    }
+
+    function updateBalanceDisplay() {
+      balanceAmountEl.textContent = currentBalance.toFixed(2) + " CZK";
+    }
+
+    function showNewNotification() {
+      notifCount += 1;
+      notifBadge.textContent = notifCount;
+      notifBadge.style.display = "flex";
+    }
+
+
+    // umožní psaní jen číslic + backspace, ostatní blokuje
+    codeInput.addEventListener("keydown", (e) => {
+      const key = e.key;
+
+      if (key === "Backspace") {
+        e.preventDefault();
+        if (codeDigits.length > 0) {
+          codeDigits = codeDigits.slice(0, -1);
+          refreshInput();
+          updateButtonState();
+        }
+      } else if (/^[0-9]$/.test(key)) {
+        e.preventDefault();
+        if (codeDigits.length < MAX_DIGITS) {
+          codeDigits += key;
+          refreshInput();
+          updateButtonState();
+        }
+      } else if (key === "Tab" || key.startsWith("Arrow")) {
+        return; // povolit tab / šipky
+      } else {
+        e.preventDefault();
+      }
+    });
+
+    codeInput.addEventListener("focus", () => {
+      codeInput.setSelectionRange(codeInput.value.length, codeInput.value.length);
+    });
+
+    // ---- stavy obrazovky ----
+    function setStateInitial() {
+      iconError.style.display   = "none";
+      iconSuccess.style.display = "none";
+      statusBanner.classList.remove("visible");
+      statusBanner.textContent = "";
+
+      // v úvodním stavu: Použít, Vygenerovat, Zpět
+      btnUse.style.display       = "inline-block";
+      btnQr.style.display        = "inline-block";
+      btnSecondary.style.display = "none";
+      btnBack.style.display      = "inline-block";
+
+      btnUse.style.order  = 1;
+      btnQr.style.order   = 2;
+      btnBack.style.order = 3;
+
+      updateButtonState(); // po resetu je Use deaktivované
+
+      noticeBox.style.display = "block";
+      noticeBox.innerHTML =
+        "<strong>Toto se zobrazí uživateli při zadávání kupónu mezi 23:55–00:05</strong><br><br>" +
+        "<strong>Vážený kliente</strong>, právě probíhá pravidelná údržba systému. Dobití peněženky <strong>kupónem</strong> bude opět " +
+        "<strong>dostupné od 00:05:00</strong>.";
+    }
+
+    function setStateError() {
+      iconError.style.display   = "flex";
+      iconSuccess.style.display = "none";
+
+      statusBanner.classList.add("visible");
+      statusBanner.textContent =
+        "Chyba při dobíjení! Tento kupon byl již použit, nebo došlo k jeho expiraci či stornování. " +
+        "Zkontrolujte si v sekci notifikací informaci o jeho vybití.";
+
+      // pořadí: Zadat nový, Vygenerovat, Zpět
+      btnUse.style.display       = "none";
+      btnQr.style.display        = "inline-block";
+      btnSecondary.style.display = "inline-block";
+      btnBack.style.display      = "inline-block";
+
+      btnSecondary.style.order = 1;
+      btnQr.style.order        = 2;
+      btnBack.style.order      = 3;
+
+      btnSecondary.textContent = "Zadat nový kód k dobití";
+
+      noticeBox.style.display = "none";
+      noticeBox.innerHTML = "";
+    }
+
+    function setStateSuccess() {
+      iconError.style.display   = "none";
+      iconSuccess.style.display = "flex";
+
+      statusBanner.classList.add("visible");
+      statusBanner.textContent =
+        "Gratulujeme, právě jste úspěšně provedl(a) vybití kuponu! Během následujících minut bude navýšen zůstatek Vaší elektronické peněženky.";
+
+      // v successu: Zadat nový, QR, Zpět (Použít skryjeme)
+      btnUse.style.display       = "none";
+      btnQr.style.display        = "inline-block";
+      btnSecondary.style.display = "inline-block";
+      btnBack.style.display      = "inline-block";
+
+      btnSecondary.style.order = 1;
+      btnQr.style.order        = 2;
+      btnBack.style.order      = 3;
+
+      btnSecondary.textContent = "Zadat nový kód k dobití";
+
+      noticeBox.style.display = "block";
+      noticeBox.innerHTML =
+        "<strong>Po nabití celé hodnoty či dílčí části kuponu do Vaší elektronické peněženky Vám bude naúčtován poplatek ve výši 5%. " +
+        "Zůstatek Vaší peněženky bude činit 950 Kč.</strong><br><br>" +
+        "V případě on-line nákupu u obchodníka pomocí platebního tlačítka bude provedený okamžitý CashBack ve výši celého " +
+        "poplatku nebo jeho dílčí části k poměru utracené částky. V případě vybití zůstatku peněženky, který je tvořen částkou " +
+        "která je kombinována dobíjecí metodou vkladu pomocí bankovního účtu a on-line hotovosti, je CashBack vyplacen nebo " +
+        "dílčím způsobem vyplácen až po vybití části toho zůstatku, který byl vytvořen na základě vkladu z bankovního účtu.";
+      // 🔥 LOGIKA NAVÝŠENÍ ZŮSTATKU + NOTIFIKACE
+      couponRedeemed = true;     // kupon se považuje za "vybitý"
+
+      currentBalance += 950;     // přičteme 950 Kč
+      updateBalanceDisplay();    // přepíšeme text "XXX.XX CZK"
+
+      showNewNotification();     // zobrazíme červenou „1“ u zvonku (nebo navýšíme číslo)
+    }
+    
+
+
+    // kliknutí na „Použít kontrolní kód k dobití“
+    btnUse.addEventListener("click", () => {
+      // Kupon už byl jednou úspěšně použit → další pokus = error
+      if (couponRedeemed) {
+        setStateError();
+        return;
+      }
+
+      if (codeDigits.length !== MAX_DIGITS) {
+        setStateError();
+        return;
+      }
+
+      if (codeDigits === CORRECT_CODE_DIGITS) {
+        setStateSuccess();
+      } else {
+        setStateError();
+      }
+    });
+
+    // „Zadat nový kód k dobití“ – reset formuláře
+    btnSecondary.addEventListener("click", () => {
+      codeDigits = "";
+      refreshInput();
+      setStateInitial();
+      codeInput.focus();
+    });
+
+    // „Zpět“
+    btnBack.addEventListener("click", () => {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = "04.3_uprava_sekce_vlozit_penize.html";
+      }
+    });
+
+    // Inicializace po načtení
+    refreshInput();
+    setStateInitial();
+  </script>
+</body>
+</html>
