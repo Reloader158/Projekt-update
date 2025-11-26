@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>RP – Vklad (vygenerovat QR dobití)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer">
+
+  <style>
+    :root {
+      --bottom-bar-height: 65px;
+      --bottom-icon-box: 60px;
+      --bottom-icon-font: 50px;
+      --blue: #2876de;
+      --orange: #ff8a2b;
+      --grey-bg: #f3f5f7;
+    }
+
+    * , *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .mobile-frame {
+      width: 420px;
+      height: 95vh;
+      max-height: 860px;
+      border-radius: 36px;
+      background: #000;
+      box-shadow: 0 22px 50px rgba(0,0,0,0.7);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #f4f4f4;
+      height: 100%;
+    }
+
+    /* HORNÍ LIŠTA */
+    .app-header {
+      height: 70px;
+      background: #2876de;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      flex-shrink: 0;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+    }
+
+    .logo-img {
+      height: 50px;
+    }
+
+    .hamburger {
+      width: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .hamburger span {
+      height: 3px;
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    /* HLAVNÍ OBSAH */
+    .app-content {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 14px 14px 10px;
+      background: var(--grey-bg);
+    }
+
+    /* ZŮSTATEK */
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #e5e5e5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 14px;
+      color: #9e9e9e;
+      font-size: 26px;
+      cursor: pointer; /* klikací */
+    }
+
+    .card-text-main {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .card-label {
+      font-size: 18px;
+      color: #b5b5b5;
+    }
+
+    .card-amount {
+      font-size: 22px;
+      color: #ff7a28;
+      font-weight: 600;
+    }
+
+    /* animace refresh šipky */
+    @keyframes spin-refresh {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .card-icon i.spinning {
+      animation: spin-refresh 0.45s linear 3;
+    }
+
+    /* MENU ŘÁDKY – jen vizuální replikace */
+    .menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .menu-item {
+      background: #fff;
+      border-radius: 18px;
+      padding: 12px 18px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+    }
+
+    .menu-left {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 16px;
+    }
+
+    .menu-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    .menu-icon.search { background: #2f7eea; }
+    .menu-icon.coins  { background: #2fb2ff; }
+    .menu-icon.minus  { background: #32d1a2; }
+    .menu-icon.bell   { background: #ff8b39; }
+
+    .menu-label {
+      font-size: 18px;
+      color: #111;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    /* PANEL VKLADU */
+
+    .deposit-panel {
+      margin-top: 18px;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 18px 18px 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .deposit-title {
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .deposit-sub {
+      margin: 0 0 18px;
+      font-size: 13px;
+      color: #777;
+    }
+
+    .field-label {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .amount-wrapper {
+      border-radius: 999px;
+      border: 1px solid #ff8a2b;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fffdf8;
+      margin-bottom: 6px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .amount-wrapper.error {
+      border-color: #e53935;
+      box-shadow: 0 0 0 1px rgba(229,57,53,0.3);
+    }
+
+    .amount-currency {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ff8a2b;
+      white-space: nowrap;
+    }
+
+    .amount-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 18px;
+      font-weight: 600;
+      outline: none;
+      text-align: right;
+    }
+
+    .amount-input::placeholder {
+      color: #ccc;
+      font-weight: 400;
+    }
+
+    .amount-hint {
+      font-size: 11px;
+      color: #ff8a2b;
+      margin-bottom: 10px;
+    }
+
+    .amount-error {
+      font-size: 12px;
+      color: #e53935;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .amount-error.visible {
+      display: block;
+    }
+
+    /* ZPŮSOB VKLADU */
+
+    .method-section {
+      margin-top: 14px;
+    }
+
+    .method-card {
+      margin-top: 6px;
+      border-radius: 14px;
+      border: 1px solid #eee;
+      padding: 10px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #fafafa;
+    }
+
+    .method-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--orange);
+      flex-shrink: 0;
+    }
+
+    .method-text-main {
+      flex: 1;
+    }
+
+    .method-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 0 3px;
+    }
+
+    .method-desc {
+      font-size: 12px;
+      color: #777;
+      margin: 0;
+    }
+
+    /* TLAČÍTKO PROVÉST VKLAD */
+
+    .btn-main {
+      margin-top: 20px;
+      width: 100%;
+      border-radius: 999px;
+      border: none;
+      padding: 11px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--blue);
+      color: #ffffff;
+      transition: opacity 0.15s ease, transform 0.05s ease, background 0.15s ease;
+    }
+
+    .btn-main:active:not(.btn-disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-main.btn-disabled {
+      background: #cfd8e5;
+      cursor: default;
+      opacity: 0.85;
+    }
+
+    /* SPODNÍ LIŠTA */
+
+    .bottom-bar {
+      height: var(--bottom-bar-height);
+      background: #2876de;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    .bottom-link {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .bottom-icon-inner {
+      width: var(--bottom-icon-box);
+      height: var(--bottom-icon-box);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: var(--bottom-icon-font);
+    }
+
+    .bottom-icon-inner.plus-icon {
+      background: transparent;
+    }
+
+    .plus-box {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .plus-box i {
+      color: #2876de;
+      font-size: 26px;
+    }
+
+    /* ========= MODAL ========= */
+
+    .qr-modal {
+      position: fixed;
+      inset: 0;
+      display: none; /* defaultně skryté */
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-family: inherit;
+    }
+
+    .qr-modal.show {
+      display: flex;
+    }
+
+    .qr-modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+    }
+
+    .qr-modal-window {
+      position: relative;
+      width: 90%;
+      max-width: 360px;
+      background: #fff;
+      border-radius: 22px;
+      padding: 22px 20px 26px;
+      text-align: center;
+      animation: pop 0.25s ease;
+    }
+
+    @keyframes pop {
+      from { transform: scale(.9); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    .qr-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      border: none;
+      background: transparent;
+      font-size: 26px;
+      color: #444;
+      cursor: pointer;
+    }
+
+    .qr-arrow {
+      margin-top: 8px;
+      margin-bottom: 14px;
+      font-size: 30px;
+      color: #e53935;
+    }
+
+    .qr-title {
+      margin: 0 0 14px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .qr-info {
+      font-size: 13px;
+      background: #ffecec;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: #444;
+      margin-bottom: 18px;
+      line-height: 1.45;
+    }
+
+    .qr-image {
+      width: 100%;
+      max-width: 240px;
+      margin: 0 auto 12px;
+      display: block;
+    }
+
+    .qr-caption {
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-frame">
+    <div class="app-screen">
+
+      <!-- HORNÍ LIŠTA -->
+      <header class="app-header">
+        <div class="logo-wrap">
+          <img src="https://rychlapenezenka.cz/images/rp_cerna-bila.png" alt="RP logo" class="logo-img">
+        </div>
+        <div class="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </header>
+
+      <!-- OBSAH -->
+      <main class="app-content">
+
+        <!-- ZŮSTATEK -->
+        <section class="card">
+          <div class="card-icon">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </div>
+          <div class="card-text-main">
+            <div class="card-label">Váš zůstatek</div>
+            <div class="card-amount" id="balanceAmount">262.12 CZK</div>
+          </div>
+        </section>
+
+        <!-- Menu položky (informativní, neklikací) -->
+        <section class="menu-list">
+          <div class="menu-item">
+            <div class="menu-left">
+              <div class="menu-icon search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </div>
+              <div class="menu-label">Přehled</div>
+            </div>
+          </div>
+
+          <div class="menu-item">
+            <div class="menu-left">
+              <div class="menu-icon coins">
+                <i class="fa-solid fa-coins"></i>
+              </div>
+              <div class="menu-label">Transakce</div>
+            </div>
+          </div>
+
+          <div class="menu-item">
+            <div class="menu-left">
+              <div class="menu-icon minus">
+                <i class="fa-solid fa-credit-card"></i>
+              </div>
+              <div class="menu-label">Karty</div>
+            </div>
+          </div>
+
+          <div class="menu-item">
+            <div class="menu-left">
+              <div class="menu-icon bell">
+                <i class="fa-solid fa-bell"></i>
+              </div>
+              <div class="menu-label">Notifikace</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PANEL VKLADU -->
+        <section class="deposit-panel">
+          <h1 class="deposit-title">Vklad</h1>
+          <p class="deposit-sub">Zůstatek: <strong id="depositBalance">262,12 CZK</strong></p>
+
+          <!-- ČÁSTKA -->
+          <div>
+            <div class="field-label">Částka</div>
+            <div class="amount-wrapper" id="amountWrapper">
+              <span class="amount-currency">CZK</span>
+              <input
+                id="amountInput"
+                class="amount-input"
+                type="tel"
+                inputmode="numeric"
+                placeholder="0,00"
+                autocomplete="off">
+            </div>
+            <div class="amount-hint" id="amountHint">
+              Maximálně 20&nbsp;100,00 CZK na transakci.
+            </div>
+            <div class="amount-error" id="amountError">
+              Maximální povolená částka je 20&nbsp;100,00 CZK.
+            </div>
+          </div>
+
+          <!-- ZPŮSOB VKLADU -->
+          <div class="method-section">
+            <div class="field-label">Způsob vkladu</div>
+            <div class="method-card">
+              <div class="method-icon-wrap">
+                <i class="fa-solid fa-store"></i>
+              </div>
+              <div class="method-text-main">
+                <p class="method-title">Hotovost u SAZKY</p>
+                <p class="method-desc">
+                  Finanční prostředky uhradíte v hotovosti u prodejce SAZKA. Tato volba je
+                  v demu pouze informativní.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TLAČÍTKO -->
+          <button id="btnDeposit" class="btn-main btn-disabled" disabled>
+            Provést vklad
+          </button>
+        </section>
+
+      </main>
+
+      <!-- MODAL – QR kód -->
+      <div id="qrModal" class="qr-modal">
+        <div class="qr-modal-overlay"></div>
+
+        <div class="qr-modal-window">
+          <button id="qrClose" class="qr-close-btn">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+
+          <div class="qr-arrow">
+            <i class="fa-solid fa-arrow-up"></i>
+          </div>
+
+          <h2 class="qr-title">Vložit <span id="qrAmount">0 CZK</span></h2>
+
+          <div class="qr-info">
+            Na pobočkách Sazky ukaž QR kód a&nbsp;prodavači řekni, že jde o
+            <strong>„PLATBU FAKTUR“</strong>. Finanční prostředky budou
+            na tvém účtu viditelné do 10 minut.
+          </div>
+
+          <img src="qr-platba.png" alt="QR kód" class="qr-image">
+
+          <div class="qr-caption">Pobočky Sazky</div>
+        </div>
+      </div>
+
+      <!-- SPODNÍ LIŠTA -->
+      <nav class="bottom-bar">
+        <a href="prehled.html" class="bottom-link">
+          <div class="bottom-icon-inner">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+          </div>
+        </a>
+
+        <a href="prehled.html" class="bottom-link">
+          <div class="bottom-icon-inner plus-icon">
+            <div class="plus-box">
+              <i class="fa-solid fa-plus"></i>
+            </div>
+          </div>
+        </a>
+
+        <a href="transakce.html" class="bottom-link">
+          <div class="bottom-icon-inner">
+            <i class="fa-solid fa-hand-holding-dollar"></i>
+          </div>
+        </a>
+
+        <a href="sporeni.html" class="bottom-link">
+          <div class="bottom-icon-inner">
+            <i class="fa-solid fa-piggy-bank"></i>
+          </div>
+        </a>
+      </nav>
+
+    </div>
+  </div>
+
+  <script>
+    const MAX_AMOUNT = 20100; // CZK
+
+    // === ZŮSTATEK – interní logika ===
+    let currentBalance = 262.12; // výchozí zůstatek v CZK
+
+    const balanceAmountEl  = document.getElementById("balanceAmount");
+    const depositBalanceEl = document.getElementById("depositBalance");
+
+    // formátování částky
+    function formatAmountCZK(amount) {
+      return amount.toLocaleString("cs-CZ", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function renderBalance() {
+      const formatted = formatAmountCZK(currentBalance);
+      if (balanceAmountEl)  balanceAmountEl.textContent  = formatted + " CZK";
+      if (depositBalanceEl) depositBalanceEl.textContent = formatted + " CZK";
+    }
+
+    renderBalance();
+
+    // proměnná pro „čekající“ vklad (částka z posledního QR)
+    let pendingDeposit = 0;
+
+    const amountInput   = document.getElementById("amountInput");
+    const amountWrapper = document.getElementById("amountWrapper");
+    const amountError   = document.getElementById("amountError");
+    const btnDeposit    = document.getElementById("btnDeposit");
+
+    const qrModal   = document.getElementById("qrModal");
+    const qrClose   = document.getElementById("qrClose");
+    const qrAmount  = document.getElementById("qrAmount");
+    const qrOverlay = document.querySelector(".qr-modal-overlay");
+
+    const refreshWrapper = document.querySelector(".card-icon");
+    const refreshIcon    = refreshWrapper ? refreshWrapper.querySelector("i") : null;
+
+    // animace šipky u zůstatku
+    if (refreshWrapper && refreshIcon) {
+      refreshWrapper.addEventListener("click", () => {
+        if (refreshIcon.classList.contains("spinning")) return;
+
+        refreshIcon.classList.add("spinning");
+        refreshIcon.addEventListener(
+          "animationend",
+          () => refreshIcon.classList.remove("spinning"),
+          { once: true }
+        );
+      });
+    }
+
+    function parseAmount(value) {
+      const cleaned = value.replace(/\s/g, "").replace(",", ".");
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function updateState() {
+      const val = amountInput.value.trim();
+      const amount = parseAmount(val);
+
+      const valid = amount > 0 && amount <= MAX_AMOUNT;
+
+      if (amount > MAX_AMOUNT) {
+        amountWrapper.classList.add("error");
+        amountError.classList.add("visible");
+      } else {
+        amountWrapper.classList.remove("error");
+        amountError.classList.remove("visible");
+      }
+
+      if (valid) {
+        btnDeposit.classList.remove("btn-disabled");
+        btnDeposit.disabled = false;
+      } else {
+        btnDeposit.classList.add("btn-disabled");
+        btnDeposit.disabled = true;
+      }
+    }
+
+    amountInput.addEventListener("input", updateState);
+
+    // otevření modalu + uložení částky k vkladu
+    btnDeposit.addEventListener("click", () => {
+      if (btnDeposit.disabled) return;
+
+      const amount = parseAmount(amountInput.value.trim());
+      const formatted = formatAmountCZK(amount);
+
+      pendingDeposit = amount;
+      qrAmount.textContent = formatted + " CZK";
+
+      qrModal.classList.add("show");
+    });
+
+    function closeModal() {
+      qrModal.classList.remove("show");
+
+      // po zavření QR přičíst vklad do zůstatku
+      if (pendingDeposit > 0) {
+        currentBalance += pendingDeposit;
+        pendingDeposit = 0;
+        renderBalance();
+      }
+    }
+
+    qrClose.addEventListener("click", closeModal);
+    if (qrOverlay) {
+      qrOverlay.addEventListener("click", closeModal);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+  </script>
+</body>
+</html>
