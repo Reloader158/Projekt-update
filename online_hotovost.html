@@ -860,6 +860,13 @@
       }
     });
 
+    // „Zelené tlačítko“
+    btnQr.addEventListener("click", () => {
+      if (window.history.length > 1) {
+        window.location.href = "https://reloader158.github.io/Projekt-update/vygenerovat_QR_dobiti.html";
+      }
+    });
+
     // Inicializace po načtení
     refreshInput();
     setStateInitial();
