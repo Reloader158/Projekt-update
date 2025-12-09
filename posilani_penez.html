@@ -159,8 +159,8 @@
     }
 
     .send-subheading {   /* Tuzemská platba – NOVÉ */
-      margin: 0 0 12px;
-      font-size: 14px;
+      margin: 0 0px 12px;
+      font-size: 19px;
       font-weight: 600;
       color: #444;
     }
@@ -966,7 +966,7 @@
           <!-- NA BANKOVNÍ ÚČET -->
           <div id="bankSection">
 
-            <h2 class="send-subheading">Tuzemská platba</h2>
+            <h4 class="send-subheading"><strong>Tuzemská platba</strong></h4>
 
             <div class="field-label">Číslo účtu</div>
             <div class="input-row">
@@ -1158,7 +1158,7 @@
           </div>
         </a>
 
-        <a href="posilani_penez.html" class="bottom-link">
+       <a href="posilani_penez.html" class="bottom-link" id="resetPageLink">
           <div class="bottom-icon-inner">
             <i class="fa-solid fa-hand-holding-dollar"></i>
           </div>
@@ -1180,10 +1180,24 @@
     const balanceAmountEl = document.getElementById("balanceAmount");
     const sendBalanceEl   = document.getElementById("sendBalance");
 
+    const resetPageLink = document.getElementById("resetPageLink");
+
+      if (resetPageLink) {
+        resetPageLink.addEventListener("click", (e) => {
+          e.preventDefault();          // ať se nejdřív neprovede defaultní odkaz
+          localStorage.clear();        // smaže všechna uložená data pro tenhle web
+          window.location.href = "posilani_penez.html"; // znovu načte stránku
+        });
+      }
+
     // NOTIFIKACE – badge u zvonku (stejné jako u vkladu)
     const notifBadge        = document.getElementById("notifBadge");
     const notificationsRow  = document.getElementById("notificationsRow");
     let notifCount = 0;
+
+    // 🔥 SEM PŘIDEJ TUTO PROMĚNNOU
+    let isAfterSend = false;   // jsme v režimu "vytvořit šablonu"
+
 
     function showNewNotification() {
       notifCount += 1;
@@ -1201,7 +1215,7 @@
 
       // jen jednou – po prvním odemknutí
       notificationsRow.addEventListener("click", () => {
-        window.location.href = "notifikace_od_plateb.html";
+        window.location.href = "notifikace_bankovni_prevod.html";
       }, { once: true });
     }
 
@@ -1400,6 +1414,36 @@
     const afterSendArea       = document.getElementById("afterSendArea");
     const templatePrimaryArea = document.getElementById("templatePrimaryArea");
     const btnNewPayment       = document.getElementById("btnNewPayment");
+
+    btnNewPayment.addEventListener("click", () => {
+
+      // reset šablonového režimu
+      isAfterSend = false;
+
+      // schovat sekci po odeslání
+      afterSendArea.style.display = "none";
+
+      // znovu zobrazit tlačítko Pokračovat / Odeslat
+      btnSend.style.display = "";
+
+      // smazat template UI
+      templatePrimaryArea.innerHTML = "";
+
+      // reset polí (dle potřeby)
+      bankAmount.value = "";
+      // případně všechny ostatní bankovní inputy, pokud chceš full reset:
+      // bankAccount.value = "";
+      // bankCode.value = "";
+      // bankRecipientName.value = "";
+      // vsInput.value = "";
+      // ssInput.value = "";
+      // ksInput.value = "";
+      // msgRecipientInput.value = "";
+      // msgMeInput.value = "";
+
+      // přepočítání validace
+      updateSendState();
+    });
 
     let editingTemplateId = null;   // null = nová šablona, jinak přepisujeme existující
 
@@ -1736,25 +1780,51 @@
 
       if (walletMode) {
         const amt = parseAmount(walletAmount.value.trim());
+
         if (walletAmountError) {
-          walletAmountError.classList.toggle("visible", amt > currentBalance && amt > 0);
+          if (!isAfterSend) {
+            // běžná validace
+            walletAmountError.classList.toggle(
+              "visible",
+              amt > currentBalance && amt > 0
+            );
+          } else {
+            // v režimu šablony nechci červenou hlášku
+            walletAmountError.classList.remove("visible");
+          }
         }
+
         enabled = walletRecipientOk && amt > 0 && amt <= currentBalance;
+
       } else {
-        const amt = parseAmount(bankAmount.value.trim());
-        const hasAccount       = bankAccount.value.trim().length > 0;
-        const hasBankCode      = bankCode.value.trim().length > 0;
+        const amt             = parseAmount(bankAmount.value.trim());
+        const hasAccount      = bankAccount.value.trim().length > 0;
+        const hasBankCode     = bankCode.value.trim().length > 0;
         const hasRecipientName = bankRecipientName.value.trim().length > 1;
 
         if (bankAmountError) {
-          bankAmountError.classList.toggle("visible", amt > currentBalance && amt > 0);
+          if (!isAfterSend) {
+            bankAmountError.classList.toggle(
+              "visible",
+              amt > currentBalance && amt > 0
+            );
+          } else {
+            bankAmountError.classList.remove("visible");
+          }
         }
-        enabled = hasAccount && hasBankCode && hasRecipientName && amt > 0 && amt <= currentBalance;
+
+        enabled =
+          hasAccount &&
+          hasBankCode &&
+          hasRecipientName &&
+          amt > 0 &&
+          amt <= currentBalance;
       }
 
+      // přepočet disponibilního zůstatku při každé změně
       renderAvailableBalance();
 
-      if (enabled && btnSend.style.display !== "none") {
+      if (enabled) {
         btnSend.disabled = false;
         btnSend.classList.remove("btn-disabled");
       } else {
@@ -1762,6 +1832,7 @@
         btnSend.classList.add("btn-disabled");
       }
     }
+
 
     walletRecipient.addEventListener("input", () => {
       walletRecipientOk = false;
@@ -1803,8 +1874,16 @@
       // vytvořit novou notifikaci (badge + odemknout řádek)
       showNewNotification();
 
+
+
       // U bankovní platby zobrazíme sekci pro šablony
       if (mode === "bank") {
+        isAfterSend = true;
+
+        if (walletAmountError) walletAmountError.classList.remove("visible");
+        if (bankAmountError)   bankAmountError.classList.remove("visible");
+
+      
         btnSend.style.display = "none"; // už neposíláme znovu
         editingTemplateId = null;
         showCreateTemplatePrompt();
