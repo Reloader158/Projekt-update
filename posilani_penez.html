@@ -20,6 +20,7 @@
       --blue: #2876de;
       --orange: #ff8a2b;
       --grey-bg: #f3f5f7;
+      --green: #32d180;
     }
 
     * , *::before, *::after { box-sizing: border-box; }
@@ -152,16 +153,23 @@
     }
 
     .send-sub {
-      margin: 0 0 18px;
+      margin: 0 0 6px;
       font-size: 13px;
       color: #777;
+    }
+
+    .send-subheading {   /* Tuzemská platba – NOVÉ */
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
     }
 
     /* TABY */
     .send-tabs {
       display: flex;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
 
     .send-tab {
@@ -218,6 +226,9 @@
       font-size: 13px;
       color: #777;
       white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .text-input {
@@ -349,6 +360,31 @@
       grid-column: 1 / -1;
     }
 
+    /* ŘÁDEK: kód banky + Vybrat šablonu – NOVÉ */
+    .bank-code-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .bank-code-row .input-row {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .btn-template {
+      border-radius: 999px;
+      border: 1px solid var(--blue);
+      background: #eaf2ff;
+      color: var(--blue);
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
     /* ODESLAT */
     .btn-main {
       margin-top: 14px;
@@ -371,6 +407,64 @@
       cursor: default;
       opacity: 0.85;
     }
+
+    .btn-main.btn-green {         /* zelené tlačítko – NOVÉ */
+      background: var(--green);
+    }
+
+    .btn-main.btn-grey {          /* šedé sekundární – NOVÉ */
+      background: #e0e0e0;
+      color: #444;
+    }
+
+    /* Sekce po odeslání / při editaci šablony – NOVÉ */
+    .after-send {
+      margin-top: 10px;
+    }
+
+    .template-name-label {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #444;
+    }
+
+    .template-name-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .template-name-input-row input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      padding: 7px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .template-name-input-row input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 1px rgba(40,118,222,0.2);
+    }
+
+    .save-template-wrapper {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;   /* pod sebe */
+      align-items: center;      /* na střed */
+      gap: 8px;
+    }
+
+    .save-template-wrapper input {
+      width: 100%;              /* pole přes celou šířku panelu */
+    }
+
+    .save-template-wrapper .btn-save-template {
+      min-width: 60%;           /* aby nebylo moc úzké */
+    }
+
 
     /* SPODNÍ LIŠTA */
     .bottom-bar {
@@ -468,7 +562,34 @@
       text-align: right;
     }
 
-    /* TOAST notifikace (tady jen malé info bubliny) */
+    /* BADGE + stav pro Notifikace (stejně jako ve vkladu) */
+    .notif-badge {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #ff3b30;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px #ffffff;
+    }
+
+    .menu-item.notifications.disabled {
+      pointer-events: none;
+    }
+
+    .menu-item.notifications.enabled {
+      cursor: pointer;
+    }
+
+    /* TOAST notifikace */
     .toast {
       position: absolute;
       left: 50%;
@@ -606,32 +727,125 @@
       margin-bottom: 12px;
     }
 
-    /* BADGE + stav pro Notifikace (stejně jako ve vkladu) */
-    .notif-badge {
+    /* MODAL – fotoaparát (demo) – NOVÉ */
+    .modal-backdrop {
       position: absolute;
-      right: 4px;
-      bottom: 4px;
-      min-width: 16px;
-      height: 16px;
-      padding: 0 4px;
-      border-radius: 999px;
-      background: #ff3b30;
-      color: #ffffff;
-      font-size: 10px;
-      font-weight: 700;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
       display: none;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 0 2px #ffffff;
+      z-index: 55;
     }
 
-    .menu-item.notifications.disabled {
-      pointer-events: none;
+    .modal-backdrop.visible {
+      display: flex;
     }
 
-    .menu-item.notifications.enabled {
+    .simple-modal {
+      width: 85%;
+      max-width: 360px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 18px 18px 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+      text-align: center;
+    }
+
+    .simple-modal-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .simple-modal-text {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 16px;
+    }
+
+    /* MODAL – výběr šablony – NOVÉ */
+    .template-modal {
+      width: 90%;
+      max-width: 380px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 16px 14px 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+
+    .template-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .template-modal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .template-modal-close {
+      border: none;
+      background: transparent;
+      font-size: 18px;
+      cursor: pointer;
+      color: #555;
+    }
+
+    .template-table-head,
+    .template-row {
+      display: grid;
+      grid-template-columns: 2fr 2fr 1fr 1fr auto;
+      align-items: center;
+      column-gap: 6px;
+      font-size: 11px;
+    }
+
+    .template-table-head {
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .template-table-body {
+      max-height: 210px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .template-row {
+      padding: 6px 4px;
+      border-radius: 10px;
       cursor: pointer;
     }
+
+    .template-row:nth-child(odd) {
+      background: #f7f9fc;
+    }
+
+    .template-row:hover {
+      background: #eaf2ff;
+    }
+
+    .template-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .template-icon-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 2px;
+      font-size: 13px;
+    }
+
+    .template-icon-btn.edit { color: #2876de; }
+    .template-icon-btn.delete { color: #e53935; }
+
   </style>
 </head>
 <body>
@@ -711,14 +925,14 @@
             Disponibilní zůstatek: <strong id="sendBalance">262,12 CZK</strong>
           </p>
 
-          <!-- TABY -->
+          <!-- TABY – Bankovní převod vlevo, default aktivní -->
           <div class="send-tabs">
-            <button class="send-tab active" id="tabWallet">Mezi peněženkami</button>
-            <button class="send-tab" id="tabBank">Na bankovní účet</button>
+            <button class="send-tab active" id="tabBank">Bankovní převod</button>
+            <button class="send-tab" id="tabWallet">Mezi peněženkami</button>
           </div>
 
           <!-- MEZI PENĚŽENKAMI -->
-          <div id="walletSection">
+          <div id="walletSection" style="display:none;">
             <div class="field-label">Příjemce</div>
             <div class="input-row" id="walletRow">
               <span class="input-prefix">@</span>
@@ -750,7 +964,9 @@
           </div>
 
           <!-- NA BANKOVNÍ ÚČET -->
-          <div id="bankSection" style="display:none;">
+          <div id="bankSection">
+
+            <h2 class="send-subheading">Tuzemská platba</h2>
 
             <div class="field-label">Číslo účtu</div>
             <div class="input-row">
@@ -761,17 +977,26 @@
                 id="bankAccount"
                 class="text-input"
                 type="text"
-                placeholder="123456-1234567890">
+                placeholder="1234567890">
+              <!-- Fotoaparát – demo -->
+              <button id="btnCamera" class="template-icon-btn edit" type="button" title="Naskenovat číslo účtu (demo)">
+                <i class="fa-solid fa-camera"></i>
+              </button>
             </div>
 
             <div class="field-label">Kód banky</div>
-            <div class="input-row">
-              <span class="input-prefix">kód</span>
-              <input
-                id="bankCode"
-                class="text-input"
-                type="text"
-                placeholder="0800">
+            <div class="bank-code-row">
+              <div class="input-row">
+                <span class="input-prefix">kód</span>
+                <input
+                  id="bankCode"
+                  class="text-input"
+                  type="text"
+                  placeholder="0800">
+              </div>
+              <button id="btnOpenTemplates" class="btn-template" type="button">
+                Vybrat šablonu
+              </button>
             </div>
 
             <div class="bank-extra" id="bankExtra">
@@ -820,14 +1045,61 @@
 
           <!-- SPOLEČNÉ TLAČÍTKO -->
           <button id="btnSend" class="btn-main btn-disabled" disabled>
-            Pokračovat
+            Odeslat platbu
           </button>
+
+          <!-- Sekce po odeslání / při editaci šablony – NOVÉ -->
+          <div id="afterSendArea" class="after-send" style="display:none;">
+            <div id="templatePrimaryArea"></div>
+            <button id="btnNewPayment" class="btn-main btn-grey" type="button" style="margin-top:8px;">
+              Odeslat novou platbu
+            </button>
+          </div>
 
         </section>
       </main>
 
       <!-- TOAST NOTIFIKACE -->
       <div id="toast" class="toast"></div>
+
+      <!-- MODAL – fotoaparát (demo) -->
+      <div id="cameraBackdrop" class="modal-backdrop">
+        <div class="simple-modal">
+          <h2 class="simple-modal-title">Naskenovat číslo účtu</h2>
+          <p class="simple-modal-text">
+            Demo: zde by bylo focení čísla účtu. Pro ukázku můžete předvyplnit testovací číslo účtu.
+          </p>
+          <button id="btnCameraFill" class="btn-main btn-green" type="button" style="margin-top:8px;">
+            Vyplnit demo číslo účtu
+          </button>
+          <div style="margin-top:10px;">
+            <button id="btnCameraClose" class="btn-secondary" type="button">Zavřít</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL – výběr šablony -->
+      <div id="templateBackdrop" class="modal-backdrop">
+        <div class="template-modal">
+          <div class="template-modal-header">
+            <div class="template-modal-title">Vybrat šablonu</div>
+            <button id="btnTemplateClose" class="template-modal-close" type="button">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="template-table-head">
+            <div>Název</div>
+            <div>Účet + kód</div>
+            <div>VS</div>
+            <div>Částka</div>
+            <div></div>
+          </div>
+          <div id="templateTableBody" class="template-table-body">
+            <!-- řádky se doplní z JS -->
+          </div>
+        </div>
+      </div>
 
       <!-- MODAL – ověření platby -->
       <div id="authBackdrop" class="auth-backdrop">
@@ -959,7 +1231,7 @@
     }
     renderBalance(); // horní zůstatek hned po načtení
 
-    // toast notifikace (malý info bublina)
+    // toast notifikace
     function showNotification(message) {
       const toast = document.getElementById("toast");
       if (!toast) {
@@ -1076,11 +1348,16 @@
     });
 
     // BANKOVNÍ PŘEVOD
-    const bankAccount     = document.getElementById("bankAccount");
-    const bankCode        = document.getElementById("bankCode");
-    const bankAmount      = document.getElementById("bankAmount");
-    const bankAmountError = document.getElementById("bankAmountError");
-    const bankRecipientName = document.getElementById("bankRecipientName"); // ← NOVÉ
+    const bankAccount       = document.getElementById("bankAccount");
+    const bankCode          = document.getElementById("bankCode");
+    const bankAmount        = document.getElementById("bankAmount");
+    const bankAmountError   = document.getElementById("bankAmountError");
+    const bankRecipientName = document.getElementById("bankRecipientName");
+    const vsInput           = document.getElementById("vsInput");
+    const ssInput           = document.getElementById("ssInput");
+    const ksInput           = document.getElementById("ksInput");
+    const msgRecipientInput = document.getElementById("msgRecipientInput");
+    const msgMeInput        = document.getElementById("msgMeInput");
 
     // FOKUS efekty
     const inputRows = document.querySelectorAll(".input-row");
@@ -1119,6 +1396,340 @@
       sendBalanceEl.textContent = formatAmountCZK(available) + " CZK";
     }
 
+    // Sekce po odeslání / šablony – NOVÉ
+    const afterSendArea       = document.getElementById("afterSendArea");
+    const templatePrimaryArea = document.getElementById("templatePrimaryArea");
+    const btnNewPayment       = document.getElementById("btnNewPayment");
+
+    let editingTemplateId = null;   // null = nová šablona, jinak přepisujeme existující
+
+    function clearTemplateUI() {
+      editingTemplateId = null;
+      afterSendArea.style.display = "none";
+      templatePrimaryArea.innerHTML = "";
+      btnSend.style.display = ""; // ukázat tlačítko zpět
+    }
+
+    function showCreateTemplatePrompt() {
+      // po odeslání – tlačítko "Vytvořit šablonu"
+      afterSendArea.style.display = "block";
+      templatePrimaryArea.innerHTML = `
+        <button id="btnCreateTemplate" class="btn-main btn-green" type="button">
+          Vytvořit šablonu
+        </button>
+      `;
+      const btnCreateTemplate = document.getElementById("btnCreateTemplate");
+      if (btnCreateTemplate) {
+        btnCreateTemplate.addEventListener("click", () => {
+          showTemplateNameInput();
+        });
+      }
+    }
+
+    function showTemplateNameInput(existingName) {
+      // existingName – pokud edituješ, může být naplněné
+      afterSendArea.style.display = "block";
+
+      const safeName = existingName ? existingName.replace(/"/g, '&quot;') : "";
+
+      templatePrimaryArea.innerHTML = `
+        ${
+          existingName
+            ? `<div class="template-name-label">Šablona: ${safeName}</div>`
+            : `<div class="template-name-label">Nová šablona</div>`
+        }
+        <div class="save-template-wrapper">
+          <input
+            id="templateNameInput"
+            type="text"
+            placeholder="Název šablony"
+            value="${safeName}"
+          >
+          <button
+            id="btnSaveTemplate"
+            class="btn-main btn-green btn-save-template"
+            type="button"
+          >
+            Uložit šablonu
+          </button>
+        </div>
+      `;
+    
+      const btnSaveTemplate   = document.getElementById("btnSaveTemplate");
+      const templateNameInput = document.getElementById("templateNameInput");
+      if (btnSaveTemplate && templateNameInput) {
+        btnSaveTemplate.addEventListener("click", () => {
+          const name = templateNameInput.value.trim();
+          if (!name) {
+            templateNameInput.focus();
+            return;
+          }
+          saveTemplateFromForm(name);
+        });
+      }
+    }
+
+    btnNewPayment.addEventListener("click", () => {
+      resetBankForm();
+      clearTemplateUI();
+      updateSendState();
+    });
+
+    function resetBankForm() {
+      bankAccount.value       = "";
+      bankCode.value          = "";
+      bankRecipientName.value = "";
+      vsInput.value           = "";
+      ssInput.value           = "";
+      ksInput.value           = "";
+      msgRecipientInput.value = "";
+      msgMeInput.value        = "";
+      bankAmount.value        = "";
+    }
+
+    // ŠABLONY – data + localStorage – NOVÉ
+    const TEMPLATE_STORAGE_KEY = "rpBankTemplates";
+
+    const DEFAULT_TEMPLATES = [
+      {
+        id: "tmpl1",
+        name: "Nájem",
+        account: "1234567890",
+        bankCode: "0800",
+        recipientName: "Pronajímatel s.r.o.",
+        vs: "20240001",
+        ss: "",
+        ks: "",
+        msgRecipient: "Nájemné",
+        msgMe: "Nájem byt",
+        amount: 12000
+      },
+      {
+        id: "tmpl2",
+        name: "Mobilní tarif",
+        account: "9876543210",
+        bankCode: "0100",
+        recipientName: "Moje telefonní společnost a.s.",
+        vs: "555555",
+        ss: "",
+        ks: "",
+        msgRecipient: "Faktura za služby",
+        msgMe: "Telefon",
+        amount: 799
+      }
+    ];
+
+    let templates = [];
+
+    function loadTemplates() {
+      try {
+        const stored = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+        if (stored) {
+          templates = JSON.parse(stored);
+        } else {
+          templates = DEFAULT_TEMPLATES.slice();
+          saveTemplates();
+        }
+      } catch (e) {
+        templates = DEFAULT_TEMPLATES.slice();
+      }
+    }
+
+    function saveTemplates() {
+      try {
+        localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templates));
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function renderTemplateTable() {
+      const body = document.getElementById("templateTableBody");
+      if (!body) return;
+      body.innerHTML = "";
+      if (!templates.length) {
+        const div = document.createElement("div");
+        div.style.fontSize = "12px";
+        div.style.color = "#777";
+        div.style.padding = "8px 4px";
+        div.textContent = "Nemáte zatím žádné šablony.";
+        body.appendChild(div);
+        return;
+      }
+
+      templates.forEach(t => {
+        const row = document.createElement("div");
+        row.className = "template-row";
+        row.dataset.id = t.id;
+
+        const colName = document.createElement("div");
+        colName.textContent = t.name || "";
+
+        const colAcc = document.createElement("div");
+        colAcc.textContent = (t.account || "") + (t.bankCode ? " / " + t.bankCode : "");
+
+        const colVs = document.createElement("div");
+        colVs.textContent = t.vs || "";
+
+        const colAmt = document.createElement("div");
+        colAmt.textContent = t.amount != null ? formatAmountCZK(Number(t.amount)) + " Kč" : "";
+
+        const colActions = document.createElement("div");
+        colActions.className = "template-actions";
+
+        const btnEdit = document.createElement("button");
+        btnEdit.className = "template-icon-btn edit";
+        btnEdit.type = "button";
+        btnEdit.innerHTML = '<i class="fa-solid fa-pen"></i>';
+
+        const btnDelete = document.createElement("button");
+        btnDelete.className = "template-icon-btn delete";
+        btnDelete.type = "button";
+        btnDelete.innerHTML = '<i class="fa-solid fa-trash"></i>';
+
+        colActions.appendChild(btnEdit);
+        colActions.appendChild(btnDelete);
+
+        row.appendChild(colName);
+        row.appendChild(colAcc);
+        row.appendChild(colVs);
+        row.appendChild(colAmt);
+        row.appendChild(colActions);
+
+        // klik na řádek – načtení šablony
+        row.addEventListener("click", () => {
+          const tmpl = templates.find(tt => tt.id === t.id);
+          if (!tmpl) return;
+          fillFormFromTemplate(tmpl);
+          closeTemplateModal();
+        });
+
+        // edit – přepsat stávající
+        btnEdit.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const tmpl = templates.find(tt => tt.id === t.id);
+          if (!tmpl) return;
+          fillFormFromTemplate(tmpl);
+          closeTemplateModal();
+          editingTemplateId = tmpl.id;
+          btnSend.style.display = "none"; // upravujeme šablonu, neodesíláme
+          showTemplateNameInput(tmpl.name);
+        });
+
+        // delete – odstranit šablonu
+        btnDelete.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const index = templates.findIndex(tt => tt.id === t.id);
+          if (index !== -1) {
+            templates.splice(index, 1);
+            saveTemplates();
+            renderTemplateTable();
+          }
+        });
+
+        body.appendChild(row);
+      });
+    }
+
+    function fillFormFromTemplate(t) {
+      bankAccount.value       = t.account || "";
+      bankCode.value          = t.bankCode || "";
+      bankRecipientName.value = t.recipientName || "";
+      vsInput.value           = t.vs || "";
+      ssInput.value           = t.ss || "";
+      ksInput.value           = t.ks || "";
+      msgRecipientInput.value = t.msgRecipient || "";
+      msgMeInput.value        = t.msgMe || "";
+      bankAmount.value        = t.amount != null ? String(t.amount).replace(".", ",") : "";
+      updateSendState();
+    }
+
+    function saveTemplateFromForm(name) {
+      const tmplData = {
+        id: editingTemplateId || ("tmpl_" + Date.now()),
+        name,
+        account: bankAccount.value.trim(),
+        bankCode: bankCode.value.trim(),
+        recipientName: bankRecipientName.value.trim(),
+        vs: vsInput.value.trim(),
+        ss: ssInput.value.trim(),
+        ks: ksInput.value.trim(),
+        msgRecipient: msgRecipientInput.value.trim(),
+        msgMe: msgMeInput.value.trim(),
+        amount: parseAmount(bankAmount.value.trim())
+      };
+
+      if (editingTemplateId) {
+        const idx = templates.findIndex(t => t.id === editingTemplateId);
+        if (idx !== -1) {
+          templates[idx] = tmplData;
+        } else {
+          templates.push(tmplData);
+        }
+      } else {
+        templates.push(tmplData);
+      }
+
+      saveTemplates();
+      renderTemplateTable();
+      showNotification("Šablona byla uložena.");
+      resetBankForm();
+      clearTemplateUI();
+      updateSendState();
+    }
+
+    // MODAL – template výběr
+    const templateBackdrop   = document.getElementById("templateBackdrop");
+    const btnOpenTemplates   = document.getElementById("btnOpenTemplates");
+    const btnTemplateClose   = document.getElementById("btnTemplateClose");
+
+    function openTemplateModal() {
+      templateBackdrop.classList.add("visible");
+      renderTemplateTable();
+    }
+
+    function closeTemplateModal() {
+      templateBackdrop.classList.remove("visible");
+    }
+
+    btnOpenTemplates.addEventListener("click", openTemplateModal);
+    btnTemplateClose.addEventListener("click", closeTemplateModal);
+    templateBackdrop.addEventListener("click", (e) => {
+      if (e.target === templateBackdrop) {
+        closeTemplateModal();
+      }
+    });
+
+    // Fotoaparát – demo modal
+    const cameraBackdrop = document.getElementById("cameraBackdrop");
+    const btnCamera      = document.getElementById("btnCamera");
+    const btnCameraClose = document.getElementById("btnCameraClose");
+    const btnCameraFill  = document.getElementById("btnCameraFill");
+
+    function openCameraModal() {
+      cameraBackdrop.classList.add("visible");
+    }
+
+    function closeCameraModal() {
+      cameraBackdrop.classList.remove("visible");
+    }
+
+    btnCamera.addEventListener("click", openCameraModal);
+    btnCameraClose.addEventListener("click", closeCameraModal);
+    cameraBackdrop.addEventListener("click", (e) => {
+      if (e.target === cameraBackdrop) {
+        closeCameraModal();
+      }
+    });
+
+    btnCameraFill.addEventListener("click", () => {
+      bankAccount.value = "1112223339";
+      bankCode.value = "0800";
+      updateSendState();
+      closeCameraModal();
+    });
+
+    // LOGIKA enable/disable tlačítka
     function updateSendState() {
       const walletMode = tabWallet.classList.contains("active");
       let enabled = false;
@@ -1131,21 +1742,19 @@
         enabled = walletRecipientOk && amt > 0 && amt <= currentBalance;
       } else {
         const amt = parseAmount(bankAmount.value.trim());
-        const hasAccount  = bankAccount.value.trim().length > 0;
-        const hasBankCode = bankCode.value.trim().length > 0;
-        const hasRecipientName = bankRecipientName.value.trim().length > 1; // ← NOVÉ
+        const hasAccount       = bankAccount.value.trim().length > 0;
+        const hasBankCode      = bankCode.value.trim().length > 0;
+        const hasRecipientName = bankRecipientName.value.trim().length > 1;
 
         if (bankAmountError) {
           bankAmountError.classList.toggle("visible", amt > currentBalance && amt > 0);
         }
-        // tlačítko se rozsvítí jen když je vyplněné číslo účtu, kód banky, jméno příjemce a částka v limitu
         enabled = hasAccount && hasBankCode && hasRecipientName && amt > 0 && amt <= currentBalance;
       }
 
-      // přepočet disponibilního zůstatku při každé změně
       renderAvailableBalance();
 
-      if (enabled) {
+      if (enabled && btnSend.style.display !== "none") {
         btnSend.disabled = false;
         btnSend.classList.remove("btn-disabled");
       } else {
@@ -1163,8 +1772,7 @@
     bankAccount.addEventListener("input", updateSendState);
     bankCode.addEventListener("input", updateSendState);
     bankAmount.addEventListener("input", updateSendState);
-    bankRecipientName.addEventListener("input", updateSendState); // ← NOVÉ
-
+    bankRecipientName.addEventListener("input", updateSendState);
 
     // dokončení transakce po Face ID
     function performTransaction(mode, amt) {
@@ -1189,11 +1797,20 @@
         walletRecipientOk = false;
         walletStatusBox.innerHTML = "";
       } else {
-        bankAmount.value = "";
+        // neresetujeme hned – necháme data pro případnou šablonu
       }
 
       // vytvořit novou notifikaci (badge + odemknout řádek)
       showNewNotification();
+
+      // U bankovní platby zobrazíme sekci pro šablony
+      if (mode === "bank") {
+        btnSend.style.display = "none"; // už neposíláme znovu
+        editingTemplateId = null;
+        showCreateTemplatePrompt();
+      } else {
+        clearTemplateUI();
+      }
 
       updateSendState();
     }
@@ -1208,7 +1825,7 @@
       closeAuthFlow();
     });
 
-    // Klik na Pokračovat – spustí ověřovací flow (PIN + Face ID)
+    // Klik na Odeslat platbu – spustí ověřovací flow (PIN + Face ID)
     btnSend.addEventListener("click", () => {
       if (btnSend.disabled) return;
 
@@ -1245,7 +1862,9 @@
       });
     }
 
-    // inicializace disponibilního zůstatku po načtení
+    // inicializace
+    loadTemplates();
+    setMode("bank");           // default: Bankovní převod vlevo
     renderAvailableBalance();
   </script>
 </body>
