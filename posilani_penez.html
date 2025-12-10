@@ -342,6 +342,51 @@
       margin-bottom: 10px;
     }
 
+    /* Nadpis Tuzemská platba + QR tlačítko */
+    .bank-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px 0 6px;
+    }
+
+    .bank-header-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    /* malé tlačítko QR vedle nadpisu */
+    .qr-pay-btn {
+      border-radius: 999px;
+      border: 1px solid #e0e0e0;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #f5f5f5;
+      color: #FF8A00;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .qr-pay-btn i {
+      font-size: 14px;
+    }
+
+    /* rozložení dvou tlačítek v QR popupu */
+    .qr-demo-options {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 6px;
+    }
+
+    .qr-demo-options .btn-primary,
+    .qr-demo-options .btn-secondary {
+      flex: 1;
+    }
+
+
     .small-input {
       width: 100%;
       border-radius: 10px;
@@ -843,8 +888,56 @@
       font-size: 13px;
     }
 
+    /* Barevné varianty tlačítek */
+    .btn-main.btn-orange {
+      background: var(--orange);
+    }
+
+    .btn-main.btn-blue {
+      background: var(--blue);
+    }
+
+    /* Sekce po odeslání / šablony */
+    .after-send {
+      margin-top: 14px;
+    }
+
+    /* Blok "Nová šablona" */
+    .template-name-block {
+      margin-top: 8px;
+    }
+
+    .template-name-label {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    /* pilulový input pro název šablony */
+    .template-name-input {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid #ff8a2b;
+      padding: 8px 14px;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 8px;
+    }
+
+    .template-name-input::placeholder {
+      color: #cfd8e5;
+    }
+
+    /* modré tlačítko pod inputem */
+    .template-save-btn {
+      width: 100%;
+    }
+
+
+
     .template-icon-btn.edit { color: #2876de; }
     .template-icon-btn.delete { color: #e53935; }
+  
 
   </style>
 </head>
@@ -966,7 +1059,14 @@
           <!-- NA BANKOVNÍ ÚČET -->
           <div id="bankSection">
 
-            <h4 class="send-subheading"><strong>Tuzemská platba</strong></h4>
+             <!-- Nadpis + QR tlačítko (demo) -->
+            <div class="bank-header">
+              <div class="bank-header-title">Tuzemská platba</div>
+              <button type="button" id="btnQrDemo" class="qr-pay-btn">
+                <i class="fa-solid fa-qrcode"></i>
+                QR platba
+              </button>
+            </div>
 
             <div class="field-label">Číslo účtu</div>
             <div class="input-row">
@@ -1049,12 +1149,16 @@
           </button>
 
           <!-- Sekce po odeslání / při editaci šablony – NOVÉ -->
-          <div id="afterSendArea" class="after-send" style="display:none;">
-            <div id="templatePrimaryArea"></div>
-            <button id="btnNewPayment" class="btn-main btn-grey" type="button" style="margin-top:8px;">
-              Odeslat novou platbu
-            </button>
-          </div>
+            <div id="afterSendArea" class="after-send" style="display:none;">
+              <!-- ORANŽOVÉ tlačítko nahoře -->
+              <button id="btnNewPayment" class="btn-main btn-orange" type="button" style="margin-bottom:8px;">
+                Odeslat novou platbu
+              </button>
+
+              <!-- Sem budeme z JS vkládat "Vytvořit šablonu" / input + Uložit šablonu -->
+              <div id="templatePrimaryArea"></div>
+            </div>
+
 
         </section>
       </main>
@@ -1077,6 +1181,38 @@
           </div>
         </div>
       </div>
+
+            <!-- QR PLATBA – DEMO MODAL -->
+      <div id="qrDemoModal" class="auth-backdrop">
+        <div class="auth-modal">
+          <h2 class="auth-title">Načíst QR platbu (demo)</h2>
+          <p class="auth-sub">
+            V této ukázce QR kód reálně nečteme, jen simulujeme postup načtení.
+          </p>
+
+          <div class="qr-demo-options">
+            <button id="btnQrFromGallery" type="button" class="btn-primary">
+              Z&nbsp;uložiště
+            </button>
+            <button id="btnQrFromCamera" type="button" class="btn-secondary">
+              Kamerou
+            </button>
+          </div>
+
+          <div id="qrDemoStepCamera" style="display:none; margin-top:10px; font-size:13px; color:#555;">
+            <p>Simulace kamery – v plné verzi by zde byl náhled obrazu.</p>
+            <button id="btnQrDemoCapture" type="button" class="btn-primary">
+              Vyfotit (demo)
+            </button>
+          </div>
+
+          <div class="auth-actions" style="margin-top:16px;">
+            <button id="btnQrDemoClose" type="button" class="btn-secondary">Zavřít</button>
+          </div>
+        </div>
+      </div>
+
+
 
       <!-- MODAL – výběr šablony -->
       <div id="templateBackdrop" class="modal-backdrop">
@@ -1258,6 +1394,51 @@
         toast.classList.remove("show");
       }, 3000);
     }
+
+    const btnQrDemo        = document.getElementById("btnQrDemo");
+    const qrDemoModal      = document.getElementById("qrDemoModal");
+    const btnQrDemoClose   = document.getElementById("btnQrDemoClose");
+    const btnQrFromGallery = document.getElementById("btnQrFromGallery");
+    const btnQrFromCamera  = document.getElementById("btnQrFromCamera");
+    const btnQrDemoCapture = document.getElementById("btnQrDemoCapture");
+    const qrDemoStepCamera = document.getElementById("qrDemoStepCamera");
+
+    function openQrDemo() {
+      if (!qrDemoModal) return;
+      qrDemoStepCamera.style.display = "none";
+      qrDemoModal.classList.add("visible");
+    }
+
+    function closeQrDemo() {
+      if (!qrDemoModal) return;
+      qrDemoModal.classList.remove("visible");
+      qrDemoStepCamera.style.display = "none";
+    }
+
+    if (btnQrDemo)       btnQrDemo.addEventListener("click", openQrDemo);
+    if (btnQrDemoClose)  btnQrDemoClose.addEventListener("click", closeQrDemo);
+
+    if (btnQrFromGallery) {
+      btnQrFromGallery.addEventListener("click", () => {
+        showNotification("Demo: otevřel by se výběr fotky s QR kódem.");
+        closeQrDemo();
+      });
+    }
+
+    if (btnQrFromCamera) {
+      btnQrFromCamera.addEventListener("click", () => {
+        qrDemoStepCamera.style.display = "block";
+      });
+    }
+
+    if (btnQrDemoCapture) {
+      btnQrDemoCapture.addEventListener("click", () => {
+        showNotification("Demo: QR kód načten. V ostré verzi by se formulář předvyplnil.");
+        closeQrDemo();
+      });
+    }
+
+
 
     // MODAL flow
     function openAuthFlow(mode, amount) {
@@ -1447,21 +1628,22 @@
 
     let editingTemplateId = null;   // null = nová šablona, jinak přepisujeme existující
 
-    function clearTemplateUI() {
-      editingTemplateId = null;
-      afterSendArea.style.display = "none";
-      templatePrimaryArea.innerHTML = "";
-      btnSend.style.display = ""; // ukázat tlačítko zpět
-    }
-
     function showCreateTemplatePrompt() {
-      // po odeslání – tlačítko "Vytvořit šablonu"
+      // ukážeme sekci
       afterSendArea.style.display = "block";
+
+      // ORANŽOVÉ tlačítko nahoře
+      btnNewPayment.textContent = "Odeslat novou platbu";
+      btnNewPayment.classList.remove("btn-grey");
+      btnNewPayment.classList.add("btn-orange");
+
+      // dole jen jedno modré tlačítko "Vytvořit šablonu"
       templatePrimaryArea.innerHTML = `
-        <button id="btnCreateTemplate" class="btn-main btn-green" type="button">
+        <button id="btnCreateTemplate" class="btn-main btn-blue" type="button">
           Vytvořit šablonu
         </button>
       `;
+
       const btnCreateTemplate = document.getElementById("btnCreateTemplate");
       if (btnCreateTemplate) {
         btnCreateTemplate.addEventListener("click", () => {
@@ -1471,47 +1653,61 @@
     }
 
     function showTemplateNameInput(existingName) {
-      // existingName – pokud edituješ, může být naplněné
+      // vždy ukážeme sekci
       afterSendArea.style.display = "block";
 
-      const safeName = existingName ? existingName.replace(/"/g, '&quot;') : "";
+      // oranžové "Odeslat novou platbu" nahoře zůstává
+      btnNewPayment.textContent = "Odeslat novou platbu";
+      btnNewPayment.classList.remove("btn-grey");
+      btnNewPayment.classList.add("btn-orange");
 
+      const safeName = existingName
+        ? existingName.replace(/"/g, '&quot;')
+        : "";
+
+      // blok: label -> input -> modré tlačítko přes celou šířku
       templatePrimaryArea.innerHTML = `
-        ${
-          existingName
-            ? `<div class="template-name-label">Šablona: ${safeName}</div>`
-            : `<div class="template-name-label">Nová šablona</div>`
-        }
-        <div class="save-template-wrapper">
+        <div class="template-name-block">
+          <div class="template-name-label">
+            ${existingName ? "Upravit šablonu" : "Nová šablona"}
+          </div>
           <input
             id="templateNameInput"
             type="text"
-            placeholder="Název šablony"
+            class="template-name-input"
+            placeholder="vlož název šablony"
             value="${safeName}"
           >
           <button
             id="btnSaveTemplate"
-            class="btn-main btn-green btn-save-template"
+            class="btn-main btn-blue template-save-btn"
             type="button"
           >
             Uložit šablonu
           </button>
         </div>
       `;
-    
-      const btnSaveTemplate   = document.getElementById("btnSaveTemplate");
-      const templateNameInput = document.getElementById("templateNameInput");
-      if (btnSaveTemplate && templateNameInput) {
+
+      const nameInput = document.getElementById("templateNameInput");
+      const btnSaveTemplate = document.getElementById("btnSaveTemplate");
+
+      if (btnSaveTemplate) {
         btnSaveTemplate.addEventListener("click", () => {
-          const name = templateNameInput.value.trim();
+          const name = nameInput.value.trim();
           if (!name) {
-            templateNameInput.focus();
+            alert("Zadejte název šablony.");
             return;
           }
-          saveTemplateFromForm(name);
+          saveTemplateFromForm(name); // tuhle funkci už v kódu máš
         });
       }
+
+      if (nameInput) {
+        nameInput.focus();
+        nameInput.select();
+      }
     }
+
 
     btnNewPayment.addEventListener("click", () => {
       resetBankForm();
@@ -1586,6 +1782,20 @@
         // ignore
       }
     }
+
+    function clearTemplateUI() {
+      editingTemplateId = null;
+      afterSendArea.style.display = "none";
+      templatePrimaryArea.innerHTML = "";
+
+      // vrátíme vzhled tlačítka
+      btnNewPayment.classList.remove("btn-orange");
+      btnNewPayment.classList.add("btn-grey");
+      btnNewPayment.textContent = "Odeslat novou platbu";
+
+      btnSend.style.display = ""; // ukázat hlavní tlačítko zpět (pro další platbu)
+    }
+
 
     function renderTemplateTable() {
       const body = document.getElementById("templateTableBody");
