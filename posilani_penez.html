@@ -1046,13 +1046,13 @@
                 class="amount-input"
                 type="tel"
                 inputmode="numeric"
-                placeholder="0,00">
+                placeholder="1,00">
+            </div>
+            <div id="walletFeeInfo" class="field-helper" style="margin-top:6px;">
+              Výše poplatku za převod: 0 Kč
             </div>
             <div id="walletAmountError" class="amount-error">
               Nemůžete poslat víc než je zůstatek Vaší peněženky.
-            </div>
-            <div class="field-helper">
-              Maximálně do výše zůstatku Vaší peněženky.
             </div>
           </div>
 
@@ -1553,6 +1553,8 @@
     const ksInput           = document.getElementById("ksInput");
     const msgRecipientInput = document.getElementById("msgRecipientInput");
     const msgMeInput        = document.getElementById("msgMeInput");
+    const walletFeeInfo     = document.getElementById("walletFeeInfo");
+
 
     // FOKUS efekty
     const inputRows = document.querySelectorAll(".input-row");
@@ -1575,21 +1577,24 @@
 
       const walletMode = tabWallet.classList.contains("active");
       let available = currentBalance;
-      let amt = 0;
+      let used = 0;
 
       if (walletMode && walletAmount) {
-        amt = parseAmount(walletAmount.value.trim());
+        const amt = parseAmount(walletAmount.value.trim());
+        const fee = calcWalletFee(amt); // 👈 poplatek
+        used = amt + fee;
       } else if (!walletMode && bankAmount) {
-        amt = parseAmount(bankAmount.value.trim());
+        const amt = parseAmount(bankAmount.value.trim());
+        used = amt;
       }
 
-      if (amt > 0) {
-        const used = Math.min(amt, currentBalance);
-        available = currentBalance - used;
+      if (used > 0) {
+        available = Math.max(0, currentBalance - used);
       }
 
       sendBalanceEl.textContent = formatAmountCZK(available) + " CZK";
     }
+
 
     // Sekce po odeslání / šablony – NOVÉ
     const afterSendArea       = document.getElementById("afterSendArea");
@@ -1983,34 +1988,65 @@
       closeCameraModal();
     });
 
+    function calcWalletFee(amount) {
+      // amount je v Kč
+      if (amount < 1) return 0;
+
+      if (amount <= 200) return 1;
+
+      // 0,5 %
+      const fee = amount * 0.005;
+
+      // zaokrouhlení na 2 desetinná místa
+      return Math.round(fee * 100) / 100;
+    }
+
+
     // LOGIKA enable/disable tlačítka
     function updateSendState() {
       const walletMode = tabWallet.classList.contains("active");
       let enabled = false;
 
+      /* =========================
+        MEZI PENĚŽENKAMI
+      ========================= */
       if (walletMode) {
         const amt = parseAmount(walletAmount.value.trim());
+        const isMinValid = amt >= 1;
+        const fee = isMinValid ? calcWalletFee(amt) : 0;
+        const total = amt + fee;
 
-        if (walletAmountError) {
-          if (!isAfterSend) {
-            // běžná validace
-            walletAmountError.classList.toggle(
-              "visible",
-              amt > currentBalance && amt > 0
-            );
-          } else {
-            // v režimu šablony nechci červenou hlášku
-            walletAmountError.classList.remove("visible");
-          }
+        // info o poplatku
+        if (walletFeeInfo) {
+          walletFeeInfo.textContent =
+            "Výše poplatku za převod: " + formatAmountCZK(fee) + " Kč";
         }
 
-        enabled = walletRecipientOk && amt > 0 && amt <= currentBalance;
+        // červená chyba jen když:
+        // - částka >= 1 Kč
+        // - a (částka + poplatek) > zůstatek
+        if (walletAmountError) {
+          walletAmountError.classList.toggle(
+            "visible",
+            isMinValid && total > currentBalance
+          );
+        }
 
-      } else {
-        const amt             = parseAmount(bankAmount.value.trim());
-        const hasAccount      = bankAccount.value.trim().length > 0;
-        const hasBankCode     = bankCode.value.trim().length > 0;
-        const hasRecipientName = bankRecipientName.value.trim().length > 1;
+        // povolení tlačítka
+        enabled =
+          walletRecipientOk &&
+          isMinValid &&
+          total <= currentBalance;
+      }
+
+      /* =========================
+        BANKOVNÍ PŘEVOD
+      ========================= */
+      else {
+        const amt = parseAmount(bankAmount.value.trim());
+        const hasAccount        = bankAccount.value.trim().length > 0;
+        const hasBankCode       = bankCode.value.trim().length > 0;
+        const hasRecipientName  = bankRecipientName.value.trim().length > 1;
 
         if (bankAmountError) {
           if (!isAfterSend) {
@@ -2031,9 +2067,10 @@
           amt <= currentBalance;
       }
 
-      // přepočet disponibilního zůstatku při každé změně
+      // přepočet disponibilního zůstatku
       renderAvailableBalance();
 
+      // stav tlačítka
       if (enabled) {
         btnSend.disabled = false;
         btnSend.classList.remove("btn-disabled");
@@ -2042,6 +2079,9 @@
         btnSend.classList.add("btn-disabled");
       }
     }
+
+     
+      
 
 
     walletRecipient.addEventListener("input", () => {
