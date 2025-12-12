@@ -125,7 +125,7 @@
       margin-right: 14px;
       color: #9e9e9e;
       font-size: 26px;
-      cursor: pointer; /* klikací */
+      cursor: pointer;
     }
 
     .card-text-main {
@@ -155,7 +155,7 @@
       animation: spin-refresh 0.45s linear 3;
     }
 
-    /* MENU ŘÁDKY – jen vizuální replikace */
+    /* MENU ŘÁDKY */
     .menu-list {
       display: flex;
       flex-direction: column;
@@ -189,6 +189,7 @@
       color: #fff;
       font-size: 26px;
       flex-shrink: 0;
+      position: relative; /* kvůli badge */
     }
 
     .menu-icon.search { background: #2f7eea; }
@@ -201,6 +202,33 @@
       color: #111;
       margin-left: auto;
       text-align: right;
+    }
+
+    /* BADGE u zvonku */
+    .notif-badge {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #ff3b30;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px #ffffff;
+    }
+
+    .menu-item.notifications.disabled {
+      pointer-events: none;
+    }
+
+    .menu-item.notifications.enabled {
+      cursor: pointer;
     }
 
     /* PANEL VKLADU */
@@ -263,7 +291,6 @@
       font-weight: 600;
       outline: none;
       text-align: right;
-      padding-right: 10px; /* ← přidané odsazení od pravého kraje */
     }
 
     .amount-input::placeholder {
@@ -415,7 +442,7 @@
     .qr-modal {
       position: fixed;
       inset: 0;
-      display: none; /* defaultně skryté */
+      display: none;
       align-items: center;
       justify-content: center;
       z-index: 9999;
@@ -494,6 +521,28 @@
       font-weight: 600;
       color: #444;
     }
+
+    .amount-hint.hint-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      white-space:nowrap;      /* neláme řádky */
+      overflow:hidden;         /* když je fakt málo místa */
+    }
+
+    .amount-hint .hint-left{
+      overflow:hidden;
+      text-overflow:ellipsis;  /* když se nevejde, zkrátí se … */
+      color: #32d1a2; /* naše oranžová */
+    }
+
+    .amount-hint .hint-right{
+      flex-shrink:0;           /* drží se na jednom řádku */
+      white-space:nowrap;
+      color: #000000; /* naše oranžová */
+    }
+
   </style>
 </head>
 <body>
@@ -526,8 +575,9 @@
           </div>
         </section>
 
-        <!-- Menu položky (informativní, neklikací) -->
+        <!-- Menu položky -->
         <section class="menu-list">
+          <!-- Přehled -->
           <div class="menu-item">
             <div class="menu-left">
               <div class="menu-icon search">
@@ -537,6 +587,7 @@
             </div>
           </div>
 
+          <!-- Transakce -->
           <div class="menu-item">
             <div class="menu-left">
               <div class="menu-icon coins">
@@ -546,6 +597,7 @@
             </div>
           </div>
 
+          <!-- Karty -->
           <div class="menu-item">
             <div class="menu-left">
               <div class="menu-icon minus">
@@ -555,10 +607,12 @@
             </div>
           </div>
 
-          <div class="menu-item">
+          <!-- Notifikace se zvonečkem + badge -->
+          <div class="menu-item notifications disabled" id="notificationsRow">
             <div class="menu-left">
               <div class="menu-icon bell">
                 <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge" id="notifBadge">1</span>
               </div>
               <div class="menu-label">Notifikace</div>
             </div>
@@ -580,14 +634,15 @@
                 class="amount-input"
                 type="tel"
                 inputmode="numeric"
-                placeholder="0,00"
+                placeholder="Min. částka pro dobití je 100 CZK"
                 autocomplete="off">
             </div>
-            <div class="amount-hint" id="amountHint">
-              Maximálně 20&nbsp;100,00 CZK na transakci.
+            <div class="amount-hint hint-row" id="amountHint">
+              <span class="hint-left">Maximální vklad je 20 100 CZK.</span>
+              <span class="hint-right" id="feeHint">Poplatek za dobití: 0,00&nbsp;CZK</span>
             </div>
             <div class="amount-error" id="amountError">
-              Maximální povolená částka je 20&nbsp;100,00 CZK.
+              Výše této částky nelze vložit.
             </div>
           </div>
 
@@ -677,14 +732,25 @@
 
   <script>
     const MAX_AMOUNT = 20100; // CZK
+    const MIN_AMOUNT = 100; // CZK
 
-    // === ZŮSTATEK – interní logika ===
-    let currentBalance = 262.12; // výchozí zůstatek v CZK
+    // ZŮSTATEK
+    let currentBalance = 262.12;
 
     const balanceAmountEl  = document.getElementById("balanceAmount");
     const depositBalanceEl = document.getElementById("depositBalance");
+    const feeHintEl = document.getElementById("feeHint");
 
-    // formátování částky
+    function calcTopUpFee(amount) {
+      if (amount <= 0) return 0;
+
+      if (amount >= 2000) return 100;
+
+      // do 1999 je 5 %
+      const fee = amount * 0.05;
+      return Math.round(fee * 100) / 100; // na 2 desetinná místa
+    }
+
     function formatAmountCZK(amount) {
       return amount.toLocaleString("cs-CZ", {
         minimumFractionDigits: 2,
@@ -697,10 +763,33 @@
       if (balanceAmountEl)  balanceAmountEl.textContent  = formatted + " CZK";
       if (depositBalanceEl) depositBalanceEl.textContent = formatted + " CZK";
     }
-
     renderBalance();
 
-    // proměnná pro „čekající“ vklad (částka z posledního QR)
+    // NOTIFIKACE – badge u zvonku
+    const notifBadge       = document.getElementById("notifBadge");
+    const notificationsRow = document.getElementById("notificationsRow");
+    let notifCount = 0;
+
+    function showNewNotification() {
+      notifCount += 1;
+      if (notifBadge) {
+        notifBadge.textContent = notifCount;
+        notifBadge.style.display = "flex";
+      }
+      enableNotificationsRow();
+    }
+
+    function enableNotificationsRow() {
+      if (!notificationsRow) return;
+      notificationsRow.classList.remove("disabled");
+      notificationsRow.classList.add("enabled");
+
+      notificationsRow.addEventListener("click", () => {
+        window.location.href = "notifikace_online_hotovost.html";
+      }, { once: true });
+    }
+
+    // čekající vklad
     let pendingDeposit = 0;
 
     const amountInput   = document.getElementById("amountInput");
@@ -740,16 +829,27 @@
       const val = amountInput.value.trim();
       const amount = parseAmount(val);
 
-      const valid = amount > 0 && amount <= MAX_AMOUNT;
+      const tooHigh = amount > MAX_AMOUNT;
+      const tooLow  = amount > 0 && amount < MIN_AMOUNT; // jen když už něco zadal
+      const valid   = amount >= MIN_AMOUNT && amount <= MAX_AMOUNT;
 
-      if (amount > MAX_AMOUNT) {
+      // chyba + červené orámování
+      if (tooHigh || tooLow) {
         amountWrapper.classList.add("error");
         amountError.classList.add("visible");
+
+        // volitelně uprav text chyby podle situace:
+        if (tooLow) {
+          amountError.textContent = "Minimální částka pro dobití je 100 CZK.";
+        } else {
+          amountError.textContent = "Výše této částky nelze vložit.";
+        }
       } else {
         amountWrapper.classList.remove("error");
         amountError.classList.remove("visible");
       }
 
+      // tlačítko
       if (valid) {
         btnDeposit.classList.remove("btn-disabled");
         btnDeposit.disabled = false;
@@ -757,7 +857,14 @@
         btnDeposit.classList.add("btn-disabled");
         btnDeposit.disabled = true;
       }
+
+      // poplatek do hintu
+      if (feeHintEl) {
+        const fee = calcTopUpFee(amount);
+        feeHintEl.textContent = "Poplatek za dobití: " + formatAmountCZK(fee) + "\u00A0CZK";
+      }
     }
+
 
     amountInput.addEventListener("input", updateState);
 
@@ -774,15 +881,31 @@
       qrModal.classList.add("show");
     });
 
+    let depositTimeoutId = null;
+
+    function scheduleDepositApply() {
+      if (pendingDeposit > 0) {
+        const amountToAdd = pendingDeposit;
+        pendingDeposit = 0;
+
+        if (depositTimeoutId) {
+          clearTimeout(depositTimeoutId);
+        }
+
+        depositTimeoutId = setTimeout(() => {
+          currentBalance += amountToAdd;
+          renderBalance();
+
+          // po připsání vkladu vytvoříme notifikaci
+          showNewNotification();
+        }, 5000); // 5 vteřin
+      }
+    }
+
     function closeModal() {
       qrModal.classList.remove("show");
-
-      // po zavření QR přičíst vklad do zůstatku
-      if (pendingDeposit > 0) {
-        currentBalance += pendingDeposit;
-        pendingDeposit = 0;
-        renderBalance();
-      }
+      // po zavření QR naplánovat připsání vkladu za 5 sekund
+      scheduleDepositApply();
     }
 
     qrClose.addEventListener("click", closeModal);
