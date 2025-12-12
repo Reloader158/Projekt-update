@@ -1049,7 +1049,7 @@
                 placeholder="1,00">
             </div>
             <div id="walletFeeInfo" class="field-helper" style="margin-top:6px;">
-              Výše poplatku za převod: 0 Kč
+              Výše poplatku za převod: 0 CZK
             </div>
             <div id="walletAmountError" class="amount-error">
               Nemůžete poslat víc než je zůstatek Vaší peněženky.
@@ -1831,7 +1831,7 @@
         colVs.textContent = t.vs || "";
 
         const colAmt = document.createElement("div");
-        colAmt.textContent = t.amount != null ? formatAmountCZK(Number(t.amount)) + " Kč" : "";
+        colAmt.textContent = t.amount != null ? formatAmountCZK(Number(t.amount)) + " CZK" : "";
 
         const colActions = document.createElement("div");
         colActions.className = "template-actions";
@@ -1989,7 +1989,7 @@
     });
 
     function calcWalletFee(amount) {
-      // amount je v Kč
+      // amount je v CZK
       if (amount < 1) return 0;
 
       if (amount <= 200) return 1;
@@ -2019,11 +2019,11 @@
         // info o poplatku
         if (walletFeeInfo) {
           walletFeeInfo.textContent =
-            "Výše poplatku za převod: " + formatAmountCZK(fee) + " Kč";
+            "Výše poplatku za převod: " + formatAmountCZK(fee) + " CZK";
         }
 
         // červená chyba jen když:
-        // - částka >= 1 Kč
+        // - částka >= 1 CZK
         // - a (částka + poplatek) > zůstatek
         if (walletAmountError) {
           walletAmountError.classList.toggle(
