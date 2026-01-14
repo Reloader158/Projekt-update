@@ -25,12 +25,12 @@
       --c-user: 170px;
       --c-vs: 130px;
       --c-holder: 170px;
-      --c-issued: 200px;
+      --c-issued: 260px;
       --c-card: 170px;
       --c-status: 200px;
       --c-pay: 140px;
       --c-rej: 200px;
-      --c-lastcmd: 180px;
+      --c-lastcmd: 260px;
       --c-edit: 70px;
     }
 
@@ -280,6 +280,8 @@
     .btn-blue{ background: var(--btn-blue); color:#fff; }
     .btn-red{ background: var(--btn-red); color:#fff; }
     .btn:active{ transform: translateY(1px); }
+    .btn-orange{ background:#f59e0b; color:#fff; }
+
 
     .meta-inline{
       display:flex;
@@ -433,6 +435,7 @@
       align-items:center;
       flex:0 0 auto;
     }
+    
     .sbtn{
       width:22px; height:22px;
       border:1px solid #b8c3d6;
@@ -458,10 +461,61 @@
       box-shadow: inset 0 0 0 1px rgba(200,30,30,.15);
     }
 
-
-    @media (max-width: 3440px){
-      .table-shell{ height: calc(100vh - 56px - 18px - 18px - 140px); }
+    /* Pager (rotátor stránek) */
+    .pager{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      user-select:none;
+      min-height:32px;
     }
+
+    .pager-bottom{
+      margin-top:10px;
+    }
+
+    .pager .pnums{
+      display:inline-flex;
+      gap:6px;
+      flex: 0 0 auto;
+    }
+
+    .pbtn{
+      height:28px;
+      min-width:28px;
+      padding:0 8px;
+      border:1px solid #b8c3d6;
+      border-radius:6px;
+      background:#e9f0ff;
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+      color:#1f4fa3;
+      line-height:1;
+    }
+
+    .pbtn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+
+    .pbtn:hover:not(:disabled){
+      background:#dbe8ff;
+      border-color:#9fb3d7;
+    }
+
+    .pbtn.active{
+      background:#ffe3e3;
+      border-color:#ff6b6b;
+      color:#c81e1e;
+      box-shadow: inset 0 0 0 1px rgba(200,30,30,.15);
+    }
+
+    .pbtn-nav{
+      padding:0 10px;
+    }
+
   </style>
 </head>
 
@@ -519,8 +573,14 @@
               <path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2Zm0 10H4V12h16v4Zm0-6H4V8h16v2Z"/>
             </svg>
           </div>
+
           <h2>Přehled karet</h2>
+
+          <!-- ROTÁTOR (nahoře, uprostřed) -->
           <div class="hdr-spacer"></div>
+          <div class="pager pager-top" id="pagerTop" aria-label="Stránkování (horní)"></div>
+          <div class="hdr-spacer"></div>
+
           <button class="tiny-btn">.pdf</button>
           <button class="tiny-btn">.csv</button>
         </div>
@@ -531,12 +591,14 @@
               <button class="btn btn-purple">Zrušit všechny mé rezervace</button>
             </div>
             <div class="actions-bottom">
+              <button id="btnUnused" class="btn btn-orange">Nepoužité</button>
               <button id="btnFilter" class="btn btn-blue">Filtr</button>
               <button id="btnReset" class="btn btn-red">Reset</button>
             </div>
           </div>
 
-          
+          <!-- info o zobrazení -->
+          <div id="metaInfo" class="meta-inline"></div>
 
           <div class="table-shell" id="tableShell">
             <table>
@@ -574,8 +636,8 @@
                   <th style="color:#9ca3af;font-weight:900;">—</th>
                   <th>
                     <div class="date-2">
-                      <input id="fLastCmdFrom" class="fdate" type="date" title="Datum posledního příkazu – od">
-                      <input id="fLastCmdTo" class="fdate" type="date" title="Datum posledního příkazu – do">
+                      <input id="fLastCmdFrom" class="fdate" type="date" title="Poslední platba kartou – od">
+                      <input id="fLastCmdTo" class="fdate" type="date" title="Poslední platba kartou – do">
                     </div>
                   </th>
                   <th class="right" style="color:#9ca3af;font-weight:900;">—</th>
@@ -588,7 +650,7 @@
 
                   <th>
                     <div class="th-flex">
-                      <span>Datum vydání</span>
+                      <span>Datum vydání karty</span>
                       <span class="sort-arrows" aria-label="Řazení datum vydání">
                         <span class="sbtn" id="sortIssuedAsc" title="Řadit Datum vydání od nejstaršího">↑</span>
                         <span class="sbtn" id="sortIssuedDesc" title="Řadit Datum vydání od nejnovějšího">↓</span>
@@ -603,10 +665,10 @@
 
                   <th>
                     <div class="th-flex">
-                      <span>Datum posledního příkazu</span>
-                      <span class="sort-arrows" aria-label="Řazení datum posledního příkazu">
-                        <span class="sbtn" id="sortCmdAsc" title="Řadit Datum posledního příkazu od nejstaršího">↑</span>
-                        <span class="sbtn" id="sortCmdDesc" title="Řadit Datum posledního příkazu od nejnovějšího">↓</span>
+                      <span>Poslední platba kartou</span>
+                      <span class="sort-arrows" aria-label="Řazení poslední platba kartou">
+                        <span class="sbtn" id="sortCmdAsc" title="Řadit Poslední platba kartou od nejstaršího">↑</span>
+                        <span class="sbtn" id="sortCmdDesc" title="Řadit Poslední platba kartou od nejnovějšího">↓</span>
                       </span>
                     </div>
                   </th>
@@ -618,411 +680,730 @@
               <tbody id="tbody"></tbody>
             </table>
           </div>
+
+          <!-- ROTÁTOR (dole, uprostřed) -->
+          <div class="pager pager-bottom" id="pagerBottom" aria-label="Stránkování (spodní)"></div>
         </div>
       </section>
     </div>
   </main>
 
   <script>
-    /*****************************************************************
-     * KONFIGURACE ODKAZŮ (doplň si svoje URL šablony)
-     * Placeholdery: {vs} {cardId} {cardMasked}
-     *****************************************************************/
-    const LINK_TEMPLATES = {
-      userName:   "#", // např. "/admin/uzivatel/{vs}"
-      holder:     "#", // např. "/admin/drzitel/{cardId}"
-      payments:   "#", // např. "/admin/karty/{cardId}/transakce"
-      rejected:   "#", // např. "/admin/karty/{cardId}/zamítnuté"
-      edit:       "#", // např. "/admin/karty/{cardId}/edit"
+  /*****************************************************************
+   * KONFIGURACE ODKAZŮ (doplň si svoje URL šablony)
+   * Placeholdery: {vs} {cardId} {cardMasked}
+   *****************************************************************/
+  const LINK_TEMPLATES = {
+    userName:   "#", // např. "/admin/uzivatel/{vs}"
+    holder:     "#", // např. "/admin/drzitel/{cardId}"
+    payments:   "#", // např. "/admin/karty/{cardId}/transakce"
+    rejected:   "#", // např. "/admin/karty/{cardId}/zamítnuté"
+    edit:       "#", // např. "/admin/karty/{cardId}/edit"
+  };
+  function buildUrl(template, row){
+    if (!template) return "#";
+    return template
+      .replaceAll("{vs}", String(row.vs))
+      .replaceAll("{cardId}", String(row.cardId))
+      .replaceAll("{cardMasked}", String(row.cardMasked));
+  }
+
+  /*****************************************************************
+   * STRÁNKOVÁNÍ
+   *****************************************************************/
+  const PAGE_SIZE = 500;
+  let currentPage = 1;
+
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+  function getTotalPages(totalRows){
+    return Math.max(1, Math.ceil((totalRows || 0) / PAGE_SIZE));
+  }
+  function scrollTableToTop(){
+    const shell = document.getElementById("tableShell");
+    shell.scrollTop = 0;
+  }
+
+  function scrollTableToBottom(){
+    const shell = document.getElementById("tableShell");
+    shell.scrollTop = shell.scrollHeight;
+  }
+
+  function setPage(p, scrollMode = "none"){
+    const totalPages = getTotalPages(VIEW_ROWS.length);
+    currentPage = clamp(p, 1, totalPages);
+    renderCurrentPage();
+
+    if (scrollMode === "top") scrollTableToTop();
+    if (scrollMode === "bottom") scrollTableToBottom();
+  }
+
+  function getPageSlice(rows){
+    const totalPages = getTotalPages(rows.length);
+    currentPage = clamp(currentPage, 1, totalPages);
+    const start = (currentPage - 1) * PAGE_SIZE;
+
+    let slice = rows.slice(start, start + PAGE_SIZE);
+
+    // Když řadíme podle "Datum vydání", chceme N/A vždy dole na KAŽDÉ stránce
+    if (sortState.by === "issuedAt") {
+      const withPay = [];
+      const naRows = [];
+      for (const r of slice) {
+        if (r.lastCommandAt) withPay.push(r);
+        else naRows.push(r);
+      }
+      slice = withPay.concat(naRows);
+    }
+
+    return slice;
+  }
+
+  /*****************************************************************
+   * ROTÁTOR (max 9 čísel + ⏮ ◀ ▶ ⏭)
+   *****************************************************************/
+  const pagerTop = document.getElementById("pagerTop");
+  const pagerBottom = document.getElementById("pagerBottom");
+
+  function buildPagerWindow(page, totalPages){
+    const maxNums = 9;
+    const half = 4; // 4 dozadu + 4 dopředu
+
+    let start = Math.max(1, page - half);
+    let end = start + (maxNums - 1);
+
+    if (end > totalPages){
+      end = totalPages;
+      start = Math.max(1, end - (maxNums - 1));
+    }
+
+    const nums = [];
+    for(let i=start;i<=end;i++) nums.push(i);
+    return nums;
+  }
+
+  function pagerButton({label, title, disabled, active, kind}){
+    const cls = [
+      "pbtn",
+      kind ? `pbtn-${kind}` : "",
+      active ? "active" : "",
+    ].filter(Boolean).join(" ");
+    return `<button class="${cls}" type="button" ${disabled ? "disabled" : ""} title="${title || ""}" data-pagebtn>${label}</button>`;
+  }
+
+  function renderPager(){
+    const totalPages = getTotalPages(VIEW_ROWS.length);
+    const nums = buildPagerWindow(currentPage, totalPages);
+
+    const canPrev = currentPage > 1;
+    const canNext = currentPage < totalPages;
+
+    const html = `
+      ${pagerButton({label:"⏮", title:"Na začátek", disabled:!canPrev, kind:"nav"})}
+      ${pagerButton({label:"◀", title:"O stránku zpět", disabled:!canPrev, kind:"nav"})}
+
+      <span class="pnums">
+        ${nums.map(n => pagerButton({label:String(n), title:`Stránka ${n}`, disabled:false, active:n===currentPage, kind:"num"})).join("")}
+      </span>
+
+      ${pagerButton({label:"▶", title:"O stránku dál", disabled:!canNext, kind:"nav"})}
+      ${pagerButton({label:"⏭", title:"Na konec", disabled:!canNext, kind:"nav"})}
+    `;
+
+    pagerTop.innerHTML = html;
+    pagerBottom.innerHTML = html;
+
+    // napojení kliků (pro oba pagery stejné)
+    const bind = (root, mode) => {
+      const btns = [...root.querySelectorAll("button[data-pagebtn]")];
+      if(btns.length === 0) return;
+
+      // pořadí: ⏮, ◀, (1..9), ▶, ⏭
+      const first = btns[0];
+      const prev  = btns[1];
+      const next  = btns[btns.length - 2];
+      const last  = btns[btns.length - 1];
+      const numBtns = btns.slice(2, btns.length - 2);
+
+      first.addEventListener("click", () => setPage(1, mode));
+      prev.addEventListener("click",  () => setPage(currentPage - 1, mode));
+      next.addEventListener("click",  () => setPage(currentPage + 1, mode));
+      last.addEventListener("click",  () => setPage(getTotalPages(VIEW_ROWS.length), mode));
+
+      numBtns.forEach(b => {
+        const n = Number(b.textContent.trim());
+        b.addEventListener("click", () => setPage(n, mode));
+      });
     };
-    function buildUrl(template, row){
-      if (!template) return "#";
-      return template
-        .replaceAll("{vs}", String(row.vs))
-        .replaceAll("{cardId}", String(row.cardId))
-        .replaceAll("{cardMasked}", String(row.cardMasked));
-    }
 
-    /*****************************************************************
-     * (3) UNIQUE "Jméno uživatele" + římské číslice (II, III, ...)
-     *****************************************************************/
-    function toRoman(n){
-      // n >= 2
-      const map = [
-        [1000,"M"],[900,"CM"],[500,"D"],[400,"CD"],
-        [100,"C"],[90,"XC"],[50,"L"],[40,"XL"],
-        [10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]
-      ];
-      let x = n, out = "";
-      for(const [v,s] of map){
-        while(x >= v){ out += s; x -= v; }
-      }
-      return out;
-    }
-    function makeUniqueUserName(baseName, counts){
-      const c = (counts[baseName] ?? 0) + 1;
-      counts[baseName] = c;
-      if (c === 1) return baseName;
-      // druhý = (II), třetí = (III) ...
-      return `${baseName} (${toRoman(c)})`;
-    }
+    bind(pagerTop, "top");       // klik nahoře => skočit nahoru
+    bind(pagerBottom, "bottom"); // klik dole  => zůstat dole
 
-    function buildUserVariants(names, maxRepeat){
-      const baseNames = [...new Set(names.map(stripRomanSuffix))]; // unikátní base
-      const variants = [];
-      for(const base of baseNames){
-        for(let i=1;i<=maxRepeat;i++){
-          variants.push(i === 1 ? base : `${base} (${toRoman(i)})`);
-        }
-      }
-      return variants;
-    }
+    // počkej na layout po innerHTML
+    requestAnimationFrame(() => {
+      keepActiveVisible(pagerTop);
+      keepActiveVisible(pagerBottom);
+    });
+  }
 
-    function stripRomanSuffix(name){
-      return String(name).replace(/\s+\([IVXLCDM]+\)\s*$/i, "").trim();
-    }
-
-
-    /*****************************************************************
-     * FAKE DATA (50 řádků)
-     * issuedAt <= lastCommandAt
-     * Držitel se může opakovat, UserName je unikátní (s římskými číslicemi)
-     *****************************************************************/
-    // "Speciální" jména, u kterých chceme občas vidět (II), (III)...
-    const SPECIAL_BASE_NAMES = [
-      "Patrik Denemark",
-      "Jaroslav Fikar",
-      "Jakub Studnička",
-      "Monika Zezulová",
-      "Adam Děkan"
+  /*****************************************************************
+   * (3) UNIQUE "Jméno uživatele" + římské číslice (II, III, ...)
+   *****************************************************************/
+  function toRoman(n){
+    // n >= 2
+    const map = [
+      [1000,"M"],[900,"CM"],[500,"D"],[400,"CD"],
+      [100,"C"],[90,"XC"],[50,"L"],[40,"XL"],
+      [10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]
     ];
-
-    // náhodné české jméno+příjmení (aby bylo hodně různých lidí)
-    const FIRST_NAMES = [
-      "Pavel","Honza","Jan","Petr","Lukáš","Tomáš","Martin","Michal","David","Jakub","Vojtěch","Filip","Ondřej","Radek","Marek",
-      "Tereza","Jana","Petra","Lucie","Monika","Veronika","Klára","Barbora","Eliška","Kateřina","Karolína","Adéla","Nikola","Kristýna","Anna"
-    ];
-
-    const LAST_NAMES = [
-      "Vrba","Kočár","Novák","Svoboda","Dvořák","Černý","Procházka","Kučera","Veselý","Horák","Němec","Pokorný","Král","Růžička","Beneš",
-      "Fiala","Sedláček","Jelínek","Kolář","Navrátil","Čermák","Vaněk","Šimek","Kříž","Blažek","Sýkora","Kratochvíl","Říha","Toman","Pospíšil"
-    ];
-
-    function randomCzechName(){
-      const fn = FIRST_NAMES[randomInt(0, FIRST_NAMES.length-1)];
-      const ln = LAST_NAMES[randomInt(0, LAST_NAMES.length-1)];
-      return `${fn} ${ln}`;
+    let x = n, out = "";
+    for(const [v,s] of map){
+      while(x >= v){ out += s; x -= v; }
     }
+    return out;
+  }
 
-    const STATUSES = [
-      "Vydaná bez nastavení",
-      "Vydaná",
-      "Blokovaná provozovatelem",
-      "Blokovaná uživatelem",
-      "Vydaná ve výpovědi",
-      "Zrušená uživatelem",
-      "Zrušená provozovatelem",
-      "Expirovala"
-    ];
+  function stripRomanSuffix(name){
+    return String(name).replace(/\s+\([IVXLCDM]+\)\s*$/i, "").trim();
+  }
 
+  /*****************************************************************
+   * FAKE DATA
+   *****************************************************************/
+  const SPECIAL_BASE_NAMES = [
+    "Patrik Denemark",
+    "Jaroslav Fikar",
+    "Jakub Studnička",
+    "Monika Zezulová",
+    "Adam Děkan"
+  ];
 
-    function pad(n){ return String(n).padStart(2,"0"); }
-    function toISODate(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
-    function maskCard(num16){
-      const s = String(num16);
-      return s.slice(0,6) + "******" + s.slice(-4);
+  const FIRST_NAMES = [
+    "Pavel","Honza","Jan","Petr","Lukáš","Tomáš","Martin","Michal","David","Jakub","Vojtěch","Filip","Ondřej","Radek","Marek","Roman","Karel","Milan","Štěpán","Daniel","Jindřich","Matěj","Jiří","Zdeněk","Jaroslav","Oldřich","Igor","Aleš","Bohumil","Ivo","Vladimír","Richard","Rostislav","Stanislav","Miroslav","Sebastian","Oskar","Albert","Erik","Adam","Šimon","Tadeáš","Svatopluk",
+    "Tereza","Jana","Petra","Lucie","Monika","Veronika","Klára","Barbora","Eliška","Kateřina","Karolína","Adéla","Nikola","Kristýna","Anna","Alena","Ivana","Lenka","Hana","Markéta","Magdalena","Dominika","Natálie","Nela","Sára","Patricie","Simona","Zuzana","Vendula","Michaela","Gabriela","Ema","Nikol","Denisa","Renata","Radka","Jitka","Šárka","Blažena"
+  ];
+
+  const LAST_NAMES = [
+    "Vrba","Kočár","Novák","Svoboda","Dvořák","Černý","Procházka","Kučera","Veselý","Horák","Němec","Pokorný","Král","Růžička","Beneš",
+    "Fiala","Sedláček","Jelínek","Kolář","Navrátil","Čermák","Vaněk","Šimek","Kříž","Blažek","Sýkora","Kratochvíl","Říha","Toman","Pospíšil",
+    "Mareš","Urban","Šťastný","Bartoš","Konečný","Holub","Čížek","Staněk","Kadlec","Doležal","Vlk","Beran","Liška","Soukup","Škoda","Malý","Moravec",
+    "Zeman","Křížek","Hruška","Němec","Černá","Novotný","Šafář","Mach","Bureš","Tichý","Vávra","Pech","Vítek","Janda","Zajíček","Kohout"
+  ];
+
+  const STATUSES = [
+    "Vydaná bez nastavení",
+    "Vydaná",
+    "Blokovaná provozovatelem",
+    "Blokovaná uživatelem",
+    "Vydaná ve výpovědi",
+    "Zrušená uživatelem",
+    "Zrušená provozovatelem",
+    "Expirovala"
+  ];
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function toISODate(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+  function maskCard(num16){
+    const s = String(num16);
+    return s.slice(0,6) + "******" + s.slice(-4);
+  }
+  function mulberry32(a){
+    return function(){
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     }
-    function mulberry32(a){
-      return function(){
-        let t = a += 0x6D2B79F5;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  const rnd = mulberry32(20260105);
+  function randomInt(min, max){ return Math.floor(rnd()*(max-min+1))+min; }
+
+  function randomCzechName(){
+    const fn = FIRST_NAMES[randomInt(0, FIRST_NAMES.length-1)];
+    const ln = LAST_NAMES[randomInt(0, LAST_NAMES.length-1)];
+    return `${fn} ${ln}`;
+  }
+
+  function makeRows(paidCount = 1200, naCount = 50, naOldCount = 50){
+    const rows = [];
+    const base = new Date(2025, 10, 1);    // 1.11.2025 (běžná data)
+    const baseOld = new Date(2025, 0, 1);  // 1.1.2025 (staré N/A)
+    const MAX_REPEAT_SPECIAL = 6;
+
+    const totalNeeded = paidCount + naCount + naOldCount;
+
+    // připrav si zásobník unikátních "base" jmen (včetně special)
+    const baseSet = new Set();
+    SPECIAL_BASE_NAMES.forEach(n => baseSet.add(n));
+
+    const targetBase = Math.min(totalNeeded + 400, 5000);
+    while (baseSet.size < targetBase){
+      baseSet.add(randomCzechName());
+    }
+    const baseNames = Array.from(baseSet);
+
+    // ============================================================
+    // 1) VYGENERUJ "picked" TAK, ABY SPECIAL BYLY VŽDY SEKVENČNĚ:
+    //    Patrik Denemark
+    //    Patrik Denemark (II)
+    //    Patrik Denemark (III) ...
+    // ============================================================
+    const picked = [];
+
+    // 1a) nejdřív special jména vždy v pořadí a bez přeskoků
+    for (const bn of SPECIAL_BASE_NAMES){
+      for (let i = 1; i <= MAX_REPEAT_SPECIAL; i++){
+        picked.push(i === 1 ? bn : `${bn} (${toRoman(i)})`);
+        if (picked.length >= totalNeeded) break;
       }
-    }
-    const rnd = mulberry32(20260105);
-    function randomInt(min, max){ return Math.floor(rnd()*(max-min+1))+min; }
-
-    function stripRomanSuffix(name){
-      // odstraní " (II)" / " (III)" atd. kdyby náhodou bylo v inputu
-      return String(name).replace(/\s+\([IVXLCDM]+\)\s*$/i, "").trim();
+      if (picked.length >= totalNeeded) break;
     }
 
-    function makeRows(count = 200){
-      const rows = [];
-      const base = new Date(2025, 10, 1); // 1.11.2025
+    // 1b) zbytek doplň náhodnými "normálními" jmény (bez special)
+    const normalBaseNames = baseNames.filter(n => !SPECIAL_BASE_NAMES.includes(n));
 
-      // kolik max variant (II..VI) dovolíme u "special" jmen
-      const MAX_REPEAT_SPECIAL = 6;
-
-      // 1) Postavíme si velký pool unikátních base jmen (random + special)
-      const baseSet = new Set();
-
-      // přidej special jména
-      SPECIAL_BASE_NAMES.forEach(n => baseSet.add(n));
-
-      // doplň random jména, aby bylo z čeho brát
-      while (baseSet.size < Math.max(140, Math.min(180, count))) {
-        baseSet.add(randomCzechName());
-      }
-
-      const baseNames = Array.from(baseSet);
-
-      // 2) Vytvoříme "USER_VARIANTS" (unikátní userName), ale:
-      // - special jména mohou mít (II..VI)
-      // - ostatní random jména budou jen 1x (bez suffixu)
-      const USER_VARIANTS = [];
-
-      for (const bn of baseNames){
-        if (SPECIAL_BASE_NAMES.includes(bn)){
-          for (let i=1;i<=MAX_REPEAT_SPECIAL;i++){
-            USER_VARIANTS.push(i===1 ? bn : `${bn} (${toRoman(i)})`);
-          }
-        } else {
-          USER_VARIANTS.push(bn);
-        }
-      }
-
-      // 3) Zamícháme a vezmeme prvních "count" => tím pádem NIKDY duplicitní userName
-      for (let i = USER_VARIANTS.length - 1; i > 0; i--) {
-        const j = randomInt(0, i);
-        [USER_VARIANTS[i], USER_VARIANTS[j]] = [USER_VARIANTS[j], USER_VARIANTS[i]];
-      }
-
-      const picked = USER_VARIANTS.slice(0, Math.min(count, USER_VARIANTS.length));
-
-      // 4) Sestav řádky
-      for (let i=0; i<picked.length; i++){
-        const userName = picked[i];
-        const holderName = stripRomanSuffix(userName); // držitel bez závorek
-
-        const vs = String(randomInt(41000000, 98999999));
-        const status = STATUSES[randomInt(0, STATUSES.length-1)];
-
-        const issued = new Date(base);
-        issued.setDate(issued.getDate() + randomInt(0, 120));
-
-        const lastCmd = new Date(issued);
-        lastCmd.setDate(lastCmd.getDate() + randomInt(0, 60)); // vždy >= issued
-
-        const cardId = 10000 + i;
-        const cardNum = "474367" + String(randomInt(1000000000, 9999999999));
-        const cardMasked = maskCard(cardNum);
-
-        rows.push({
-          cardId,
-          userName,
-          vs,
-          holderName,
-          issuedAt: toISODate(issued),
-          cardMasked,
-          status,
-          lastCommandAt: toISODate(lastCmd),
-        });
-      }
-
-      return rows;
+    // shuffle normálních jmen (deterministicky díky randomInt/rnd)
+    for (let i = normalBaseNames.length - 1; i > 0; i--) {
+      const j = randomInt(0, i);
+      [normalBaseNames[i], normalBaseNames[j]] = [normalBaseNames[j], normalBaseNames[i]];
     }
 
-
-    const ALL_ROWS = makeRows(200);
-    let VIEW_ROWS = [...ALL_ROWS];
-
-
-    /*****************************************************************
-     * RENDER
-     *****************************************************************/
-    const tbody = document.getElementById("tbody");
-    const metaInfo = document.getElementById("metaInfo");
-
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function formatCzDate(iso){
-      if(!iso) return "";
-      const [y,m,d] = iso.split("-");
-      return `${Number(d)}.${Number(m)}.${y}`;
+    for (const n of normalBaseNames){
+      if (picked.length >= totalNeeded) break;
+      picked.push(n);
     }
 
-    function render(rows){
-      const shell = document.getElementById("tableShell");
-      const prevTop = shell.scrollTop;
-      const prevLeft = shell.scrollLeft;
+    // ============================================================
+    // 2) Z "picked" vyrob řádky (Paid / N/A / OLD N/A)
+    // ============================================================
 
-      tbody.innerHTML = rows.map(r => `
-        <tr>
-          <td><a class="link" href="${buildUrl(LINK_TEMPLATES.userName, r)}" data-noop>${escapeHtml(r.userName)}</a></td>
-          <td>${escapeHtml(r.vs)}</td>
-          <td><a class="link" href="${buildUrl(LINK_TEMPLATES.holder, r)}" data-noop>${escapeHtml(r.holderName)}</a></td>
-          <td>${formatCzDate(r.issuedAt)}</td>
-          <td>${escapeHtml(r.cardMasked)}</td>
-          <td>${escapeHtml(r.status)}</td>
-          <td><a class="link" href="${buildUrl(LINK_TEMPLATES.payments, r)}" data-noop>Výpis transakcí</a></td>
-          <td><a class="link" href="${buildUrl(LINK_TEMPLATES.rejected, r)}" data-noop>Výpis zamítnutých transakcí</a></td>
-          <td>${formatCzDate(r.lastCommandAt)}</td>
-          <td class="right"><a href="${buildUrl(LINK_TEMPLATES.edit, r)}" data-noop><button class="edit-btn" title="Edit">✎</button></a></td>
-        </tr>
-      `).join("");
+    // Paid
+    for (let i = 0; i < Math.min(paidCount, picked.length); i++){
+      const userName = picked[i];
+      const holderName = stripRomanSuffix(userName);
 
-      metaInfo.innerHTML = `Zobrazeno: <b>${rows.length}</b> z <b>${ALL_ROWS.length}</b>`;
-      shell.scrollTop = prevTop;
-      shell.scrollLeft = prevLeft;
+      const vs = String(randomInt(41000000, 98999999));
+      const status = STATUSES[randomInt(0, STATUSES.length - 1)];
+
+      const issued = new Date(base);
+      issued.setDate(issued.getDate() + randomInt(0, 120));
+
+      const lastCmd = new Date(issued);
+      lastCmd.setDate(lastCmd.getDate() + randomInt(0, 60));
+
+      const cardId = 10000 + i;
+      const cardNum = "474367" + String(randomInt(1000000000, 9999999999));
+      const cardMasked = maskCard(cardNum);
+
+      rows.push({
+        cardId,
+        userName,
+        vs,
+        holderName,
+        issuedAt: toISODate(issued),
+        cardMasked,
+        status,
+        lastCommandAt: toISODate(lastCmd),
+      });
     }
 
-    /*****************************************************************
-     * Verze 1 filtry (aplikace po kliknutí)
-     *****************************************************************/
-    const el = (id) => document.getElementById(id);
-    function normalize(s){ return String(s||"").trim().toLowerCase(); }
-    function inRange(dateIso, fromIso, toIso){
-      if(!dateIso) return true;
-      if(fromIso && dateIso < fromIso) return false;
-      if(toIso && dateIso > toIso) return false;
-      return true;
+    // N/A (novější)
+    const startIdx = Math.min(paidCount, picked.length);
+    for (let k = 0; k < naCount && (startIdx + k) < picked.length; k++){
+      const userName = picked[startIdx + k];
+      const holderName = stripRomanSuffix(userName);
+
+      const vs = String(randomInt(41000000, 98999999));
+      const status = STATUSES[randomInt(0, STATUSES.length - 1)];
+
+      const issued = new Date(base);
+      issued.setDate(issued.getDate() + randomInt(0, 120));
+
+      const cardId = 10000 + startIdx + k;
+      const cardNum = "474367" + String(randomInt(1000000000, 9999999999));
+      const cardMasked = maskCard(cardNum);
+
+      rows.push({
+        cardId,
+        userName,
+        vs,
+        holderName,
+        issuedAt: toISODate(issued),
+        cardMasked,
+        status,
+        lastCommandAt: "",
+      });
     }
 
-    // (4) Řazení přes šipky: udržujeme stav
-    const sortState = { by: "", dir: "", manual: false }; // by: 'issuedAt'|'lastCommandAt', dir: 'asc'|'desc'
-    function setSort(by, dir){
-      sortState.by = by;
-      sortState.dir = dir;
-      sortState.manual = true;
+    // OLD N/A
+    const oldStartIdx = startIdx + naCount;
+    for (let k = 0; k < naOldCount && (oldStartIdx + k) < picked.length; k++){
+      const userName = picked[oldStartIdx + k];
+      const holderName = stripRomanSuffix(userName);
 
-      // UI aktivace
-      const allBtns = ["sortIssuedAsc","sortIssuedDesc","sortCmdAsc","sortCmdDesc"].map(id => document.getElementById(id));
-      allBtns.forEach(b => b.classList.remove("active"));
+      const vs = String(randomInt(41000000, 98999999));
+      const status = STATUSES[randomInt(0, STATUSES.length - 1)];
 
-      if(by === "issuedAt" && dir === "asc") document.getElementById("sortIssuedAsc").classList.add("active");
-      if(by === "issuedAt" && dir === "desc") document.getElementById("sortIssuedDesc").classList.add("active");
-      if(by === "lastCommandAt" && dir === "asc") document.getElementById("sortCmdAsc").classList.add("active");
-      if(by === "lastCommandAt" && dir === "desc") document.getElementById("sortCmdDesc").classList.add("active");
+      const issued = new Date(baseOld);
+      issued.setDate(issued.getDate() + randomInt(0, 220));
+
+      const cardId = 10000 + oldStartIdx + k;
+      const cardNum = "474367" + String(randomInt(1000000000, 9999999999));
+      const cardMasked = maskCard(cardNum);
+
+      rows.push({
+        cardId,
+        userName,
+        vs,
+        holderName,
+        issuedAt: toISODate(issued),
+        cardMasked,
+        status,
+        lastCommandAt: "",
+      });
     }
 
-    function applyFilters(){
-      const fUserName = normalize(el("fUserName").value);
-      const fVS       = normalize(el("fVS").value);
-      const fHolder   = normalize(el("fHolder").value);
-      const fCard      = normalize(el("fCard").value);
-      const fStatus    = el("fStatus").value;
+    return rows;
+  }
 
-      const issuedFrom = el("fIssuedFrom").value;
-      const issuedTo   = el("fIssuedTo").value;
+  const ALL_ROWS = makeRows(1200, 50, 50);
+  let VIEW_ROWS = [...ALL_ROWS];
 
-      const cmdFrom    = el("fLastCmdFrom").value;
-      const cmdTo      = el("fLastCmdTo").value;
 
-      const nameFilterActive = fUserName.length > 0 || fHolder.length > 0;
+  /*****************************************************************
+   * RENDER
+   *****************************************************************/
+  const tbody = document.getElementById("tbody");
+  const metaInfo = document.getElementById("metaInfo");
 
-      // auto řazení (pouze pokud admin nekliknul na šipky)
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function formatCzDate(iso){
+    if(!iso) return "";
+    const [y,m,d] = iso.split("-");
+    return `${Number(d)}.${Number(m)}.${y}`;
+  }
+
+  function formatLastPayment(iso){
+    if(!iso) return "N/A";
+    return formatCzDate(iso);
+  }
+
+  function render(rows){
+    const shell = document.getElementById("tableShell");
+    const prevTop = shell.scrollTop;
+    const prevLeft = shell.scrollLeft;
+
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td><a class="link" href="${buildUrl(LINK_TEMPLATES.userName, r)}" data-noop>${escapeHtml(r.userName)}</a></td>
+        <td>${escapeHtml(r.vs)}</td>
+        <td><a class="link" href="${buildUrl(LINK_TEMPLATES.holder, r)}" data-noop>${escapeHtml(r.holderName)}</a></td>
+        <td>${formatCzDate(r.issuedAt)}</td>
+        <td>${escapeHtml(r.cardMasked)}</td>
+        <td>${escapeHtml(r.status)}</td>
+        <td><a class="link" href="${buildUrl(LINK_TEMPLATES.payments, r)}" data-noop>Výpis transakcí</a></td>
+        <td><a class="link" href="${buildUrl(LINK_TEMPLATES.rejected, r)}" data-noop>Výpis zamítnutých transakcí</a></td>
+        <td>${escapeHtml(formatLastPayment(r.lastCommandAt))}</td>
+        <td class="right"><a href="${buildUrl(LINK_TEMPLATES.edit, r)}" data-noop><button class="edit-btn" title="Edit">✎</button></a></td>
+      </tr>
+    `).join("");
+
+    // zachovej scroll
+    shell.scrollTop = prevTop;
+    shell.scrollLeft = prevLeft;
+  }
+
+  function renderCurrentPage(){
+    const pageRows = getPageSlice(VIEW_ROWS);
+    render(pageRows);
+    renderPager();
+  }
+
+  /*****************************************************************
+   * Filtry + řazení
+   *****************************************************************/
+  const el = (id) => document.getElementById(id);
+  function normalize(s){ return String(s||"").trim().toLowerCase(); }
+
+  function inRange(dateIso, fromIso, toIso){
+    if(!dateIso){
+      return !(fromIso || toIso);
+    }
+    if(fromIso && dateIso < fromIso) return false;
+    if(toIso && dateIso > toIso) return false;
+    return true;
+  }
+
+  function romanToInt(roman){
+    if(!roman) return 0;
+    const map = {I:1,V:5,X:10,L:50,C:100,D:500,M:1000};
+    let s = roman.toUpperCase();
+    let total = 0;
+    for(let i=0;i<s.length;i++){
+      const v = map[s[i]] || 0;
+      const next = map[s[i+1]] || 0;
+      total += (next > v) ? -v : v;
+    }
+    return total;
+  }
+
+  function czCmp(a, b){
+    return String(a).localeCompare(String(b), "cs", { sensitivity: "base" });
+  }
+
+  function nameSortKey(userName){
+    const raw = String(userName || "").trim();
+
+    const m = raw.match(/\s+\(([IVXLCDM]+)\)\s*$/i);
+    const roman = m ? m[1] : "";
+    const base = raw.replace(/\s+\([IVXLCDM]+\)\s*$/i, "").trim();
+
+    const parts = base.split(/\s+/).filter(Boolean);
+
+    const last = (parts.length ? parts[parts.length - 1] : "");
+    const first = (parts.slice(0, -1).join(" ") || "");
+
+    return {
+      last,
+      first,
+      romanN: romanToInt(roman),
+      full: base,
+    };
+  }
+
+  function compareUserBySurname(a, b){
+    const A = nameSortKey(a.userName);
+    const B = nameSortKey(b.userName);
+
+    let c = czCmp(A.last, B.last);
+    if (c !== 0) return c;
+
+    c = czCmp(A.first, B.first);
+    if (c !== 0) return c;
+
+    if (A.romanN !== B.romanN) return A.romanN < B.romanN ? -1 : 1;
+
+    return czCmp(A.full, B.full);
+  }
+
+  function compareWithNA(by, dir, a, b){
+    if (by === "userNameSurname"){
+      const cmpN = compareUserBySurname(a, b);
+      return dir === "asc" ? cmpN : -cmpN;
+    }
+
+    const av = a[by] || "";
+    const bv = b[by] || "";
+
+    if(by === "lastCommandAt"){
+      const aNA = !av;
+      const bNA = !bv;
+      if(aNA && !bNA) return 1;
+      if(!aNA && bNA) return -1;
+    }
+
+    if (av === bv) return 0;
+    const cmp = av < bv ? -1 : 1;
+    return dir === "asc" ? cmp : -cmp;
+  }
+
+  const sortState = { by: "", dir: "", manual: false };
+
+  function setSort(by, dir){
+    sortState.by = by;
+    sortState.dir = dir;
+    sortState.manual = true;
+
+    const allBtns = ["sortIssuedAsc","sortIssuedDesc","sortCmdAsc","sortCmdDesc"].map(id => document.getElementById(id));
+    allBtns.forEach(b => b.classList.remove("active"));
+
+    if(by === "issuedAt" && dir === "asc") document.getElementById("sortIssuedAsc").classList.add("active");
+    if(by === "issuedAt" && dir === "desc") document.getElementById("sortIssuedDesc").classList.add("active");
+    if(by === "lastCommandAt" && dir === "asc") document.getElementById("sortCmdAsc").classList.add("active");
+    if(by === "lastCommandAt" && dir === "desc") document.getElementById("sortCmdDesc").classList.add("active");
+  }
+
+  function setSortAuto(by, dir){
+    sortState.by = by;
+    sortState.dir = dir;
+    sortState.manual = false;
+
+    const allBtns = ["sortIssuedAsc","sortIssuedDesc","sortCmdAsc","sortCmdDesc"].map(id => document.getElementById(id));
+    allBtns.forEach(b => b.classList.remove("active"));
+
+    if(by === "issuedAt" && dir === "asc") document.getElementById("sortIssuedAsc").classList.add("active");
+    if(by === "issuedAt" && dir === "desc") document.getElementById("sortIssuedDesc").classList.add("active");
+    if(by === "lastCommandAt" && dir === "asc") document.getElementById("sortCmdAsc").classList.add("active");
+    if(by === "lastCommandAt" && dir === "desc") document.getElementById("sortCmdDesc").classList.add("active");
+  }
+
+  // --- klíčová logika pro "když kliknu do jména/držitele a dám Enter/Filtr => vždy řaď podle jména"
+  let forceNameSortOnce = false;
+
+  ["fUserName","fHolder"].forEach(id => {
+    const inp = document.getElementById(id);
+    if (!inp) return;
+    inp.addEventListener("focus", () => { forceNameSortOnce = true; });
+  });
+
+  function applyFilters(resetPage = true, forceNameSort = false){
+    const fUserName = normalize(el("fUserName").value);
+    const fVS       = normalize(el("fVS").value);
+    const fHolder   = normalize(el("fHolder").value);
+    const fCard      = normalize(el("fCard").value);
+    const fStatus    = el("fStatus").value;
+
+    const issuedFrom = el("fIssuedFrom").value;
+    const issuedTo   = el("fIssuedTo").value;
+
+    const cmdFrom    = el("fLastCmdFrom").value;
+    const cmdTo      = el("fLastCmdTo").value;
+
+    const nameFilterActive = fUserName.length > 0 || fHolder.length > 0;
+
+    // 1) Vynucené řazení podle jména jen když si to user vyžádal (focus + Enter/Filtr)
+    if (forceNameSort && nameFilterActive) {
+      setSortAuto("userNameSurname", "asc");
+      forceNameSortOnce = false;
+    } else {
+      // 2) auto-sort jen pokud není manual
       if (!sortState.manual) {
-        if (nameFilterActive) {
-          // řadit podle jména jen při filtrování jména
-          setSortAuto("userName", "asc");
-        } else {
-          // jinak vždy od nejmladší platby
-          setSortAuto("lastCommandAt", "desc");
-        }
+        if (nameFilterActive) setSortAuto("userNameSurname", "asc");
+        else setSortAuto("lastCommandAt", "desc");
       }
+    }
 
-      let rows = ALL_ROWS.filter(r => {
-        if (fUserName && !normalize(r.userName).includes(fUserName)) return false;
-        if (fVS && !normalize(r.vs).includes(fVS)) return false;
-        if (fHolder && !normalize(r.holderName).includes(fHolder)) return false;
-        if (fCard && !normalize(r.cardMasked).includes(fCard)) return false;
-        if (fStatus && r.status !== fStatus) return false;
+    let rows = ALL_ROWS.filter(r => {
+      if (fUserName && !normalize(r.userName).includes(fUserName)) return false;
+      if (fVS && !normalize(r.vs).includes(fVS)) return false;
+      if (fHolder && !normalize(r.holderName).includes(fHolder)) return false;
+      if (fCard && !normalize(r.cardMasked).includes(fCard)) return false;
+      if (fStatus && r.status !== fStatus) return false;
 
-        if (!inRange(r.issuedAt, issuedFrom, issuedTo)) return false;
-        if (!inRange(r.lastCommandAt, cmdFrom, cmdTo)) return false;
+      if (!inRange(r.issuedAt, issuedFrom, issuedTo)) return false;
+      if (!inRange(r.lastCommandAt, cmdFrom, cmdTo)) return false;
 
-        return true;
-      });
+      return true;
+    });
 
-      if (sortState.by){
-        rows.sort((a,b) => {
-          const av = a[sortState.by] || "";
-          const bv = b[sortState.by] || "";
-          if (av === bv) return 0;
-          const cmp = av < bv ? -1 : 1;
-          return sortState.dir === "asc" ? cmp : -cmp;
-        });
+    if (sortState.by){
+      rows.sort((a,b) => compareWithNA(sortState.by, sortState.dir, a, b));
+    }
+
+    VIEW_ROWS = rows;
+    if (resetPage) currentPage = 1;
+    renderCurrentPage();
+  }
+
+  function isoTodayMinusMonths(months){
+    const d = new Date();
+    d.setMonth(d.getMonth() - months);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${dd}`;
+  }
+
+  // Nepoužité: N/A + vydané starší než 6 měsíců
+  document.getElementById("btnUnused").addEventListener("click", () => {
+    forceNameSortOnce = false;
+
+    el("fUserName").value = "";
+    el("fVS").value = "";
+    el("fHolder").value = "";
+    el("fCard").value = "";
+    el("fStatus").value = "";
+
+    const cutoff = isoTodayMinusMonths(6);
+
+    el("fIssuedFrom").value = "";
+    el("fIssuedTo").value = cutoff;
+
+    el("fLastCmdFrom").value = "";
+    el("fLastCmdTo").value = "";
+
+    setSort("issuedAt", "asc");
+    applyFilters(true, false);
+  });
+
+  function resetFilters(){
+    el("fUserName").value = "";
+    el("fVS").value = "";
+    el("fHolder").value = "";
+    el("fCard").value = "";
+    el("fStatus").value = "";
+
+    el("fIssuedFrom").value = "";
+    el("fIssuedTo").value = "";
+    el("fLastCmdFrom").value = "";
+    el("fLastCmdTo").value = "";
+
+    setSort("", "");
+    setSortAuto("lastCommandAt", "desc");
+
+    VIEW_ROWS = [...ALL_ROWS];
+    currentPage = 1;
+    renderCurrentPage();
+  }
+
+  // Filtr / Reset
+  document.getElementById("btnFilter").addEventListener("click", () => applyFilters(true, forceNameSortOnce));
+  document.getElementById("btnReset").addEventListener("click", resetFilters);
+
+  // ENTER v jakémkoliv filtru = spustí Filtr
+  document.querySelectorAll(".filters-row input, .filters-row select").forEach(elm => {
+    elm.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const activeId = document.activeElement && document.activeElement.id;
+        const force = (activeId === "fUserName" || activeId === "fHolder") ? true : forceNameSortOnce;
+        applyFilters(true, force);
       }
-
-      VIEW_ROWS = rows;
-      render(VIEW_ROWS);
-    }
-
-    function setSortAuto(by, dir){
-      sortState.by = by;
-      sortState.dir = dir;
-      sortState.manual = false;
-
-      // UI aktivace (stejné jako v setSort)
-      const allBtns = ["sortIssuedAsc","sortIssuedDesc","sortCmdAsc","sortCmdDesc"].map(id => document.getElementById(id));
-      allBtns.forEach(b => b.classList.remove("active"));
-
-      if(by === "issuedAt" && dir === "asc") document.getElementById("sortIssuedAsc").classList.add("active");
-      if(by === "issuedAt" && dir === "desc") document.getElementById("sortIssuedDesc").classList.add("active");
-      if(by === "lastCommandAt" && dir === "asc") document.getElementById("sortCmdAsc").classList.add("active");
-      if(by === "lastCommandAt" && dir === "desc") document.getElementById("sortCmdDesc").classList.add("active");
-    }
-
-
-    function resetFilters(){
-      el("fUserName").value = "";
-      el("fVS").value = "";
-      el("fHolder").value = "";
-      el("fCard").value = "";
-      el("fStatus").value = "";
-
-      el("fIssuedFrom").value = "";
-      el("fIssuedTo").value = "";
-      el("fLastCmdFrom").value = "";
-      el("fLastCmdTo").value = "";
-
-      setSort("", ""); // vypne řazení
-      setSortAuto("lastCommandAt", "desc"); // default od nejmladší platby
-
-      VIEW_ROWS = [...ALL_ROWS];
-      render(VIEW_ROWS);
-    }
-
-    document.getElementById("btnFilter").addEventListener("click", applyFilters);
-    document.getElementById("btnReset").addEventListener("click", resetFilters);
-    // ENTER v jakémkoliv filtru = spustí Filtr
-    document.querySelectorAll(".filters-row input, .filters-row select").forEach(elm => {
-      elm.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          applyFilters();
-        }
-      });
     });
+  });
 
+  // Sort arrow clicks => rovnou applyFilters (bez dalšího klikání na Filtr)
+  document.getElementById("sortIssuedAsc").addEventListener("click", () => {
+    forceNameSortOnce = false;
+    setSort("issuedAt","asc");
+    applyFilters(true, false);
+  });
+  document.getElementById("sortIssuedDesc").addEventListener("click", () => {
+    forceNameSortOnce = false;
+    setSort("issuedAt","desc");
+    applyFilters(true, false);
+  });
+  document.getElementById("sortCmdAsc").addEventListener("click", () => {
+    forceNameSortOnce = false;
+    setSort("lastCommandAt","asc");
+    applyFilters(true, false);
+  });
+  document.getElementById("sortCmdDesc").addEventListener("click", () => {
+    forceNameSortOnce = false;
+    setSort("lastCommandAt","desc");
+    applyFilters(true, false);
+  });
 
-    // Sort arrow clicks
-    document.getElementById("sortIssuedAsc").addEventListener("click", () => setSort("issuedAt","asc"));
-    document.getElementById("sortIssuedDesc").addEventListener("click", () => setSort("issuedAt","desc"));
-    document.getElementById("sortCmdAsc").addEventListener("click", () => setSort("lastCommandAt","asc"));
-    document.getElementById("sortCmdDesc").addEventListener("click", () => setSort("lastCommandAt","desc"));
+  // Sidebar hamburger toggle
+  document.getElementById("hamburger").addEventListener("click", () => {
+    document.body.classList.toggle("sidebar-collapsed");
+  });
 
-    // Sidebar hamburger toggle
-    document.getElementById("hamburger").addEventListener("click", () => {
-      document.body.classList.toggle("sidebar-collapsed");
-    });
+  // demo: nenecháme to nikam navigovat
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[data-noop]");
+    if(a) e.preventDefault();
+  });
 
-    // demo: nenecháme to nikam navigovat
-    document.addEventListener("click", (e) => {
-      const a = e.target.closest("a[data-noop]");
-      if(a) e.preventDefault();
-    });
-    // defaultně třeba řadit Datum posledního příkazu od nejnovějšího
-    setSortAuto("lastCommandAt","desc");
-    applyFilters();
-  </script>
+  // start
+  setSortAuto("lastCommandAt","desc");
+  applyFilters(true, false);
+</script>
 </body>
-</html>
