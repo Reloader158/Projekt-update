@@ -1,0 +1,1383 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Všechny transakce – wide table + CSV import/export</title>
+
+  <style>
+    :root{
+      --blue:#3d78d8;
+      --blue-dark:#2f66c4;
+      --sidebar-w:260px;
+      --sidebar-w-collapsed:66px;
+      --bg:#f2f4f7;
+      --card:#ffffff;
+      --line:#e6e9ef;
+      --muted:#6b7280;
+      --btn-purple:#7b1fa2;
+      --shadow:0 1px 2px rgba(0,0,0,.08);
+      --menu-gap: 6px;
+
+      --user-orange: #ff8a2a;
+      --user-orange-hover: #ff9b4d;
+      --user-orange-active: #f07c1f;
+
+      --settings-sep-color: #000;
+      --settings-sep-opacity: .2;
+      --settings-sep-thickness: 2px;
+      --settings-sep-margin: 30px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color:#111827;
+    }
+
+    /* Top bar */
+    .topbar{
+      position:fixed;
+      top:0; left:0; right:0;
+      height:56px;
+      background: var(--blue);
+      display:flex;
+      align-items:center;
+      padding:0 16px;
+      z-index:50;
+      box-shadow: var(--shadow);
+    }
+    .topbar .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#fff;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .deploy-pill{
+      display:inline-flex;
+      align-items:stretch;
+      border-radius:4px;
+      overflow:hidden;
+      box-shadow: 0 1px 0 rgba(0,0,0,.12);
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
+    .deploy-pill .left{
+      background:#2f343b;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+    }
+    .deploy-pill .left .fb{
+      width:16px; height:16px;
+      border-radius:3px;
+      background:#111;
+      display:grid;
+      place-items:center;
+      font-size:12px;
+      line-height:1;
+    }
+    .deploy-pill .right{
+      background:#11a372;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      padding:6px 10px;
+      font-weight:900;
+    }
+    .topbar .spacer{ flex:1; }
+
+    .topbar .userbtn{
+      background: var(--user-orange);
+      color:#fff;
+      border:none;
+      border-radius:6px;
+      padding:7px 12px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      box-shadow: 0 1px 0 rgba(0,0,0,.18);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .topbar .userbtn:hover{ background: var(--user-orange-hover); }
+    .topbar .userbtn:active{ background: var(--user-orange-active); transform: translateY(1px); }
+
+    /* Sidebar */
+    .sidebar{
+      position:fixed;
+      top:56px; left:0; bottom:0;
+      width:var(--sidebar-w);
+      background:#fff;
+      border-right:1px solid var(--line);
+      padding:10px 10px 14px;
+      overflow:auto;
+      transition: width .18s ease;
+    }
+    body.sidebar-collapsed .sidebar{ width: var(--sidebar-w-collapsed); }
+
+    .side-top{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 6px 10px;
+      border-bottom:1px solid #f0f2f6;
+      margin-bottom:10px;
+    }
+    .hamburger{
+      width:34px; height:28px;
+      border:1px solid #d7dce6;
+      border-radius:4px;
+      background:#fff;
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+    }
+    .hamburger:hover{ background:#f8fafc; }
+    .hamburger .bars{ width:16px; height:12px; position:relative; }
+    .hamburger .bars::before,
+    .hamburger .bars::after,
+    .hamburger .bars span{
+      content:"";
+      position:absolute; left:0; right:0;
+      height:2px; background:#6b7280; border-radius:2px;
+    }
+    .hamburger .bars::before{ top:0; }
+    .hamburger .bars span{ top:5px; }
+    .hamburger .bars::after{ bottom:0; }
+
+    .side-title{
+      font-size:12px;
+      color:#6b7280;
+      font-weight:800;
+      letter-spacing:.02em;
+      white-space:nowrap;
+    }
+    body.sidebar-collapsed .side-title{ display:none; }
+
+    .menu a{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:6px;
+      text-decoration:none;
+      color:#374151;
+      font-size:13px;
+      cursor:pointer;
+      margin-bottom: var(--menu-gap);
+      transition: background .12s ease, color .12s ease;
+    }
+    .menu a:hover{ background:#fff7ed; color:#b45309; }
+    .menu a:hover .txt{ text-decoration: underline; text-underline-offset: 3px; }
+    .menu a:hover .mi{ color:#f59e0b; }
+
+    .menu a.active{ background:#ffedd5; color:#9a3412; }
+    .menu a.active .mi{ color:#f59e0b; }
+    .menu a.active .txt{ text-decoration: underline; text-underline-offset: 3px; }
+
+    .mi{ width:18px; height:18px; color:#9ca3af; flex:0 0 auto; }
+    .mi svg{ width:18px; height:18px; display:block; fill: currentColor; }
+    .menu .txt{ white-space:nowrap; }
+    body.sidebar-collapsed .menu .txt{ display:none; }
+
+    .menu-parent{
+      position: relative;
+      margin-top: calc(var(--settings-sep-margin) + 6px);
+    }
+    .menu-parent::before{
+      content:"";
+      position:absolute;
+      left:0; right:0;
+      top: calc(-1 * var(--settings-sep-margin));
+      height: var(--settings-sep-thickness);
+      background: var(--settings-sep-color);
+      opacity: var(--settings-sep-opacity);
+    }
+
+    /* Main */
+    .main{
+      margin-left:var(--sidebar-w);
+      padding:18px 16px;
+      transition: margin-left .18s ease;
+    }
+    body.sidebar-collapsed .main{ margin-left: var(--sidebar-w-collapsed); }
+    .main-inner{
+      padding-top: 18px;
+      margin-top:56px;
+      max-width: 5000px; /* wide */
+    }
+
+    /* Card */
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:10px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position: relative;
+    }
+
+    .card-header{
+      background: var(--blue);
+      color:#fff;
+      padding:14px 14px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .card-icon{
+      width:28px; height:28px;
+      border-radius:6px;
+      background: rgba(255,255,255,.18);
+      display:grid;
+      place-items:center;
+      user-select:none;
+    }
+    .card-icon svg{ width:18px; height:18px; fill:#fff; display:block; }
+    .card-header h2{
+      margin:0;
+      font-size:22px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .hdr-spacer{ flex:1; }
+
+    /* pager (vzhled jako screenshot: modrý pás + světlé tlačítka) */
+    .pager{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      user-select:none;
+      flex: 0 0 auto;
+      margin-right: 10px;
+
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.18);
+      padding: 6px 8px;
+      border-radius: 10px;
+
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-right: 0; /* zruš to, co tam bylo */
+      z-index: 2;
+    }
+
+    .pager .pbtn,
+    .pager .pnum{
+      height:28px;
+      min-width:28px;
+      padding:0 10px;
+      border: 0;
+      border-radius:6px;
+      background: rgba(255,255,255,.85);
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+      color:#1f4fa3;
+      line-height:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: 0 1px 0 rgba(0,0,0,.12);
+    }
+
+    .pager .pbtn:hover,
+    .pager .pnum:hover{
+      background: rgba(255,255,255,.95);
+    }
+
+    .pager .pbtn:disabled{
+      opacity:.45;
+      cursor:default;
+    }
+
+    .pager .pnum.active{
+      background:#ffe3e3;
+      color:#c81e1e;
+      box-shadow: inset 0 0 0 2px rgba(200,30,30,.25), 0 1px 0 rgba(0,0,0,.12);
+    }
+
+    .hdr-tools{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .hdr-mini-btn{
+      height:28px;
+      padding:0 10px;
+      border-radius:6px;
+      border:1px solid rgba(255,255,255,.55);
+      background: transparent;
+      color:#fff;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+    }
+    .hdr-mini-btn:hover{ background: rgba(255,255,255,.12); }
+
+    /* right purple action (as screenshot) */
+    .action-row{
+      display:flex;
+      justify-content:flex-end;
+      padding: 10px 14px 0;
+      background:#fff;
+      gap:10px;
+      align-items:center;
+    }
+    .btn-purple{
+      background: var(--btn-purple);
+      color:#fff;
+      border:none;
+      border-radius:4px;
+      padding:10px 18px;
+      font-weight:900;
+      font-size:13px;
+      cursor:pointer;
+      box-shadow: 0 1px 0 rgba(0,0,0,.10);
+    }
+    .btn-purple:active{ transform: translateY(1px); }
+
+    /* Wide table panel */
+    .panel{
+      padding: 10px 14px 14px;
+      background:#fff;
+    }
+    .table-wrap{
+      border:1px solid var(--line);
+      border-radius:10px;
+      overflow:hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .scroll-x{
+      overflow-x:auto;
+      overflow-y:hidden;
+      background:#fff;
+    }
+
+    table{
+      border-collapse:separate;
+      border-spacing:0;
+      width:100%;
+      min-width: 2400px; /* force horizontal scroll */
+      font-size:12px;
+    }
+
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:5;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      padding:8px 8px;
+      text-align:left;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    /* filter row like screenshot */
+    .filter-row th{
+      position:sticky;
+      top:0;
+      background:#fff;
+      padding:6px 8px;
+      border-bottom:1px solid #eef1f6;
+      z-index:6;
+    }
+
+    .f-in, .f-sel{
+      height:22px;
+      border:1px solid #c9cfdb;
+      border-radius:2px;
+      padding:0 6px;
+      font-size:12px;
+      width:100%;
+      background:#fff;
+    }
+    .f-sel{ padding-right: 18px; }
+
+    tbody td{
+      border-bottom:1px solid #e9edf4;
+      padding:7px 8px;
+      white-space:nowrap;
+      vertical-align:middle;
+    }
+
+    /* row colors like your system */
+    tr.r-green  td{ background:#b7ffcb; }
+    tr.r-green2 td{ background:#c7ffe0; }
+    tr.r-blue   td{ background:#cfe6ff; }
+    tr.r-blue2  td{ background:#c3ddfb; }
+    tr.r-red    td{ background:#ff9ea1; }
+    tr.r-gray   td{ background:#d6d6d6; }
+
+    .col-center{ text-align:center; }
+    .linkish{ color:#1e66ff; text-decoration:underline; cursor:pointer; }
+    .edit-btn{
+      width:28px; height:22px;
+      border-radius:4px;
+      border:none;
+      background:#2f66c4;
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* top small scrollbar mock (optional) */
+    .fake-scroll{
+      height:10px;
+      background:#737373;
+      border-radius:999px;
+      margin: 10px 0 8px;
+      opacity:.85;
+    }
+
+    /* convenience columns width */
+    th.w-260{ min-width:260px; }
+    th.w-220{ min-width:220px; }
+    th.w-180{ min-width:180px; }
+    th.w-160{ min-width:160px; }
+    th.w-140{ min-width:140px; }
+    th.w-120{ min-width:120px; }
+    th.w-110{ min-width:110px; }
+    th.w-100{ min-width:100px; }
+    th.w-90{  min-width:90px;  }
+    th.w-80{  min-width:80px;  }
+    th.w-70{  min-width:70px;  }
+    th.w-60{  min-width:60px;  }
+
+    /* malé info vpravo dole (nenápadné) */
+    .hint{
+      color:#6b7280;
+      font-size:12px;
+      font-weight:700;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">
+      <span style="font-size:22px;">RP</span>
+
+      <div class="deploy-pill" title="rychlapenezenka.cz">
+        <div class="left">
+          <span class="fb">f</span>
+          <span>rychlapenezenka.cz</span>
+        </div>
+        <div class="right">deployed (N/A) 2 weeks ago</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="userbtn">⦿ Patrik Denemark ▾</button>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="side-top">
+      <button class="hamburger" id="hamburger" title="Menu">
+        <div class="bars"><span></span></div>
+      </button>
+      <div class="side-title">Menu</div>
+    </div>
+
+    <div class="menu">
+      <a href="prehled_stavu.html" data-nav="overview">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10z"/></svg></span>
+        <span class="txt">Přehled stavu</span>
+      </a>
+
+      <a href="zakaznicke_ucty.html" data-nav="accounts">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3ZM8 11c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.14.4-2.1 1.05-2.9C10.2 13.4 9.1 13 8 13Zm8 0c-1.1 0-2.2.4-3.05 1.1.65.8 1.05 1.76 1.05 2.9v2h10v-2c0-2.66-5.33-4-8-4Z"/></svg></span>
+        <span class="txt">Zákaznické účty</span>
+      </a>
+
+      <a href="vsechny_transakce.html" data-nav="tx" class="active">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 4h18v4H3V4Zm0 6h18v10H3V10Zm4 3v2h6v-2H7Z"/></svg></span>
+        <span class="txt">Všechny transakce</span>
+      </a>
+
+      <a href="/poplatky" data-nav="fees">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Zm0 11h7c-.53 3.79-3.28 7.2-7 8.48V12H5V6.3l7-3.11V12Z"/></svg></span>
+        <span class="txt">Všechny poplatky</span>
+      </a>
+
+      <a href="prehled_karet.html" data-nav="cards">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2Zm0 10H4V8h16v8Zm-2-6H6v2h12v-2Z"/></svg></span>
+        <span class="txt">Přehled karet</span>
+      </a>
+
+      <a href="/notifikace" data-nav="notif">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2Zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg></span>
+        <span class="txt">Notifikace</span>
+      </a>
+
+      <a href="/bonusy" data-nav="bonus">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 2c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4Zm-7 10v2h14v-2H5Z"/></svg></span>
+        <span class="txt">Bonusy a srážky</span>
+      </a>
+
+      <a href="/odstavky" data-nav="outages">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 14H5V8h14v10Zm-2-8H7v2h10v-2Z"/></svg></span>
+        <span class="txt">Provozní odstávky</span>
+      </a>
+
+      <a href="/statistiky" data-nav="stats">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 3h2v18H3V3Zm16 8h2v10h-2V11ZM11 7h2v14h-2V7Zm-4 6h2v8H7v-8Zm8-10h2v18h-2V3Z"/></svg></span>
+        <span class="txt">Statistiky a uzávěrky</span>
+      </a>
+
+      <a href="/logy" data-nav="logs">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 17h18v2H3v-2Zm0-5h18v2H3v-2Zm0-5h18v2H3V7Z"/></svg></span>
+        <span class="txt">Logy</span>
+      </a>
+
+      <a href="/nastaveni" class="menu-parent" data-nav="settings">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm10 4a8.1 8.1 0 0 0-.14-1.5l2.02-1.57-2-3.46-2.45 1a8.2 8.2 0 0 0-2.6-1.5l-.37-2.6H9.54l-.37 2.6a8.2 8.2 0 0 0-2.6 1.5l-2.45-1-2 3.46L2.14 10.5A8.1 8.1 0 0 0 2 12c0 .5.05 1 .14 1.5l-2.02 1.57 2 3.46 2.45-1a8.2 8.2 0 0 0 2.6 1.5l.37 2.6h4.92l.37-2.6a8.2 8.2 0 0 0 2.6-1.5l2.45 1 2-3.46-2.02-1.57c.09-.5.14-1 .14-1.5Z"/></svg></span>
+        <span class="txt">Nastavení</span>
+      </a>
+
+      <a href="/sledovani" data-nav="work">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 13h2v8H3v-8Zm4-6h2v14H7V7Zm4 4h2v10h-2V11Zm4-8h2v18h-2V3Zm4 10h2v8h-2v-8Z"/></svg></span>
+        <span class="txt">Sledování činnosti práce</span>
+      </a>
+
+      <a href="/emaily" data-nav="emails">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/></svg></span>
+        <span class="txt">Odeslané e-maily</span>
+      </a>
+
+      <a href="/status" data-nav="status">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 11H7v-2h6V5h2v8Z"/></svg></span>
+        <span class="txt">Status RP</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="main-inner">
+      <section class="card">
+        <div class="card-header">
+          <div class="card-icon" aria-hidden="true" title="Všechny transakce">
+            <svg viewBox="0 0 24 24"><path d="M12 2 2 7v2h20V7L12 2Zm-7 9h14v9H5v-9Zm2 2v5h2v-5H7Zm4 0v5h2v-5h-2Zm4 0v5h2v-5h-2Z"/></svg>
+          </div>
+          <h2>Všechny transakce</h2>
+
+          <div class="hdr-spacer"></div>
+
+          <div class="pager" id="pager" aria-label="Stránkování"></div>
+
+          <div class="hdr-tools">
+            <button class="hdr-mini-btn" id="btnPdf">.pdf</button>
+            <button class="hdr-mini-btn" id="btnCsv">.csv</button>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn-purple" id="btnCancelReservations">Zrušit všechny mé rezervace</button>
+          <div class="hint" id="hint"></div>
+        </div>
+
+        <div class="panel">
+          <div class="fake-scroll" title="jen vizuální scrollbar"></div>
+
+          <div class="table-wrap">
+            <div class="scroll-x">
+              <table id="txTable">
+                <thead>
+                  <!-- filter row (jen vizuálně) -->
+                  <tr class="filter-row">
+                    <th class="w-70"><input class="f-in" placeholder="RP ID"></th>
+                    <th class="w-120"><input class="f-in" placeholder="Párování"></th>
+                    <th class="w-160">
+                      <div style="display:flex; gap:6px;">
+                        <input class="f-in" placeholder="dd.mm.rrrr" style="min-width:0;">
+                        <input class="f-in" placeholder="dd.mm.rrrr" style="min-width:0;">
+                      </div>
+                    </th>
+                    <th class="w-90"><input class="f-in" placeholder="Kč"></th>
+                    <th class="w-160"><input class="f-in" placeholder="Vložit č. bů"></th>
+                    <th class="w-160"><input class="f-in" placeholder="Zadat plátce"></th>
+                    <th class="w-160"><input class="f-in" placeholder="Vložit č. bů"></th>
+                    <th class="w-160"><input class="f-in" placeholder="Zadat příjemce"></th>
+                    <th class="w-160"><input class="f-in" placeholder="Zdrojová peněženka"></th>
+                    <th class="w-160"><input class="f-in" placeholder="Cílová peněženka"></th>
+                    <th class="w-80"><input class="f-in" placeholder="Vložit VS"></th>
+                    <th class="w-80"><input class="f-in" placeholder="Vložit SS"></th>
+                    <th class="w-260"><input class="f-in" placeholder="Komentář"></th>
+
+                    <!-- Status transakce (dropdown) -->
+                    <th class="w-180">
+                      <select class="f-sel">
+                        <option>Všechny</option>
+                        <option>Zrušeno zákazníkem</option>
+                        <option>Nedokončeno</option>
+                        <option>Dokončeno</option>
+                        <option>Zrušeno obchodníkem</option>
+                        <option>Expirován</option>
+                        <option>Nedostatek Peněz</option>
+                        <option>Chyba</option>
+                        <option>Překročení transakčního limitu</option>
+                        <option>Uživatel zablokován</option>
+                        <option>N/a</option>
+                        <option>Podezřelý obchod</option>
+                      </select>
+                    </th>
+
+                    <th class="w-260">
+                      <select class="f-sel">
+                        <option>Všechny</option>
+                        <option>Dobití RP / Registrace</option>
+                        <option>Dobití RP</option>
+                        <option>Korekce záporného zůstatku</option>
+                        <option>Zpětná výměna</option>
+                        <option>Vypořádání zůstatku</option>
+                        <option>BONUS</option>
+                        <option>Chargeback</option>
+                        <option>Karetní refundace</option>
+                        <option>Srážka/Blokace</option>
+                        <option>Platba</option>
+                        <option>Karetní platba na internetu</option>
+                        <option>Karetní platba v kamenném obchodě</option>
+                        <option>Karetní bezkontaktní platba v kamenném obchodě</option>
+                        <option>Výběr peněz z bankomatu</option>
+                        <option>Dobití RP kuponem</option>
+                        <option>Výplata poplatků</option>
+                        <option>Poplatek za vypořádání zůstatku</option>
+                        <option>Poplatek za zpětnou výměnu EP</option>
+                        <option>Vedení účtu EP</option>
+                        <option>Poplatek za opakované vydání virtuální platební karty</option>
+                        <option>Poplatek za změnu PIN karty</option>
+                        <option>Poplatek za chargeback</option>
+                        <option>Poplatek za devizovou směnu</option>
+                        <option>Poplatek online hotovost obchodník</option>
+                      </select>
+                    </th>
+
+                    <th class="w-110"><input class="f-in" placeholder="Země"></th>
+                    <th class="w-80"><input class="f-in" placeholder="MCC"></th>
+
+                    <th class="w-70">
+                      <select class="f-sel"><option>Všechny</option><option>ano</option><option>ne</option></select>
+                    </th>
+
+                    <th class="w-120">
+                      <select class="f-sel">
+                        <option>Všechny</option>
+                        <option>Ano</option>
+                        <option>Ne</option>
+                        <option>Ano/s</option>
+                        <option>Ano/d</option>
+                      </select>
+                    </th>
+
+                    <th class="w-120">
+                      <select class="f-sel"><option>Všechny</option><option>ano</option><option>ne</option></select>
+                    </th>
+
+                    <th class="w-90"></th>
+                  </tr>
+
+                  <!-- header row -->
+                  <tr>
+                    <th class="w-70">RP ID</th>
+                    <th class="w-120">Párování</th>
+                    <th class="w-160">Zúčtováno</th>
+                    <th class="w-90">Částka</th>
+                    <th class="w-160">ČÚ plátce</th>
+                    <th class="w-160">Jméno plátce</th>
+                    <th class="w-160">BÚ příjemce – číslo</th>
+                    <th class="w-160">BÚ příjemce – název</th>
+                    <th class="w-160">Zdrojová peněženka</th>
+                    <th class="w-160">Cílová peněženka</th>
+                    <th class="w-80">VS</th>
+                    <th class="w-80">Spec. s.</th>
+                    <th class="w-260">Komentář</th>
+                    <th class="w-180">Status transakce</th>
+                    <th class="w-260">Typ pohybu</th>
+
+                    <th class="w-110">Země obchodníka</th>
+                    <th class="w-80">VISA MCC</th>
+
+                    <th class="w-70">Plat. systém</th>
+                    <th class="w-120">Podezřelý obchod</th>
+                    <th class="w-120">Nesystémová platba</th>
+                    <th class="w-90">Editace</th>
+                  </tr>
+                </thead>
+
+                <!-- !!! tady už žádné předgenerované řádky !!! -->
+                <tbody id="txBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- skrytý file picker pro fallback -->
+  <input id="csvFile" type="file" accept=".csv,text/csv" style="display:none" />
+
+  <script>
+  /******************************************************************
+   * NASTAVENÍ
+   ******************************************************************/
+  // sem vložíš svoje URL na CSV (reloader158.cz apod.)
+  const CSV_URL = "http://www.reloader158.cz/vypis_vsech_transakci_v_systemu.csv"; // např. "http://www.reloader158.cz/Admin%20-%20V%C3%BDpis%20v%C5%A1ech%20transakc%C3%AD%20v%20syst%C3%A9mu.csv"
+
+  // klávesová zkratka: Ctrl + Shift + Alt + L
+  const HOTKEY = { ctrl: true, shift: true, alt: true, key: "l" };
+
+  // stránkování
+  const ROWS_PER_PAGE = 500;
+
+  // Alias mapování CSV hlaviček -> tabulkové hlavičky (kvůli pomlčkám apod.)
+  // (Tvůj CSV má např. "BÚ příjemce - číslo", tabulka má "BÚ příjemce – číslo")
+    const HEADER_ALIASES = {
+    // CSV (má "-") vs tabulka (má "–")
+    "bu prijemce - cislo": "bu prijemce – cislo",
+    "bu prijemce - nazev": "bu prijemce – nazev"
+  };
+
+  /******************************************************************
+   * GLOBÁLNÍ STAV
+   ******************************************************************/
+  const state = {
+    allRows: [],        // full dataset (array of arrays aligned to table headers)
+    filteredRows: [],   // after filters
+    currentPage: 1,
+    totalPages: 1,
+    tableHeaders: [],   // as displayed in the 2nd THEAD row
+    headerNormToIndex: new Map(), // norm(header) -> index
+    filterControls: []  // [{type, colIndex, el, el2?}]
+  };
+
+  /******************************************************************
+   * UTIL
+   ******************************************************************/
+  function setHint(msg){
+    const el = document.getElementById("hint");
+    if(el) el.textContent = msg || "";
+  }
+
+  function normKey(s){
+    return String(s ?? "")
+      .replace(/\u00A0/g, " ")
+      .replace(/[–—]/g, "-")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // remove diacritics
+      .replace(/\s+/g, " ");
+  }
+
+  function csvEscape(value){
+    if(value === null || value === undefined) return "";
+    const s = String(value).replace(/\u00A0/g, " ").trim();
+    if(/[",\n;]/.test(s)){
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function normalizeAmountForCZ(value){
+    if(value === null || value === undefined) return "";
+    let s = String(value).replace(/\u00A0/g, " ").trim();
+    if(!s) return s;
+    s = s.replace(/(\d)\.(\d)/g, "$1,$2");
+    return s;
+  }
+
+  function parseDateCZ(ddmmyyyy){
+    // expects dd.mm.yyyy
+    const m = String(ddmmyyyy || "").trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if(!m) return null;
+    const d = parseInt(m[1],10), mo=parseInt(m[2],10), y=parseInt(m[3],10);
+    if(!y || mo<1 || mo>12 || d<1 || d>31) return null;
+    return new Date(y, mo-1, d, 0, 0, 0, 0);
+  }
+
+  function parseDateFromZuctovanoCell(cell){
+    // "21.01.2026, 12:42:03" -> date part
+    const s = String(cell || "");
+    const m = s.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
+    if(!m) return null;
+    return parseDateCZ(m[1]);
+  }
+
+  /******************************************************************
+   * CSV PARSER (delimiter ; / , + quotes)
+   ******************************************************************/
+  function parseCSV(text){
+    text = String(text || "")
+      .replace(/^\uFEFF/, "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n");
+
+    const firstLine = (text.split("\n").find(l => l.trim().length) || "");
+    const semi = (firstLine.match(/;/g) || []).length;
+    const comma = (firstLine.match(/,/g) || []).length;
+    const delim = semi >= comma ? ";" : ",";
+
+    const rows = [];
+    let row = [];
+    let cur = "";
+    let inQuotes = false;
+
+    for(let i=0;i<text.length;i++){
+      const ch = text[i];
+
+      if(ch === '"'){
+        // escaped quote
+        if(inQuotes && text[i+1] === '"'){
+          cur += '"';
+          i++;
+        }else{
+          inQuotes = !inQuotes;
+        }
+        continue;
+      }
+
+      if(!inQuotes && ch === delim){
+        row.push(cur);
+        cur = "";
+        continue;
+      }
+
+      if(!inQuotes && ch === "\n"){
+        row.push(cur);
+        rows.push(row);
+        row = [];
+        cur = "";
+        continue;
+      }
+
+      cur += ch;
+    }
+
+    // last cell
+    if(cur.length || row.length){
+      row.push(cur);
+      rows.push(row);
+    }
+
+    // trim cells
+    return rows.map(r => r.map(c => String(c ?? "").replace(/\u00A0/g," ").trim()));
+  }
+
+  function findHeaderRowIndex(rows){
+    // CSV má na začátku 2 "title" řádky, hlavička je ta, která obsahuje "RP ID"
+    for(let i=0;i<rows.length;i++){
+      const r = rows[i] || [];
+      const joined = r.join(" | ");
+      if(normKey(joined).includes("rp id") && r.length >= 5) return i;
+    }
+    return -1;
+  }
+
+  /******************************************************************
+   * TABLE HEADER + FILTER CONTROLS INIT
+   ******************************************************************/
+  function initTableHeaders(){
+    const table = document.getElementById("txTable");
+    const headerRow = table?.querySelector("thead tr:nth-child(2)");
+    if(!headerRow) return;
+
+    const ths = Array.from(headerRow.querySelectorAll("th"));
+    state.tableHeaders = ths.map(th => (th.innerText || "").trim());
+
+    state.headerNormToIndex.clear();
+    state.tableHeaders.forEach((h, idx) => state.headerNormToIndex.set(normKey(h), idx));
+  }
+
+  function initFilters(){
+    const table = document.getElementById("txTable");
+    const filterRow = table?.querySelector("thead tr.filter-row");
+    if(!filterRow) return;
+
+    const ths = Array.from(filterRow.querySelectorAll("th"));
+    state.filterControls = [];
+
+    ths.forEach((th, colIndex) => {
+      const inputs = Array.from(th.querySelectorAll("input"));
+      const selects = Array.from(th.querySelectorAll("select"));
+
+      // special case: Zúčtováno has 2 inputs (from/to) in one TH
+      if(inputs.length === 2){
+        state.filterControls.push({ type:"dateRange", colIndex, el: inputs[0], el2: inputs[1] });
+        inputs[0].addEventListener("input", onFilterChange);
+        inputs[1].addEventListener("input", onFilterChange);
+        return;
+      }
+
+      if(inputs.length === 1){
+        const el = inputs[0];
+        state.filterControls.push({ type:"text", colIndex, el });
+        el.addEventListener("input", onFilterChange);
+        return;
+      }
+
+      if(selects.length === 1){
+        const el = selects[0];
+        state.filterControls.push({ type:"select", colIndex, el });
+        el.addEventListener("change", onFilterChange);
+      }
+    });
+  }
+
+  function resetFiltersUI(){
+    for(const f of state.filterControls){
+      if(f.type === "text"){
+        f.el.value = "";
+      }else if(f.type === "select"){
+        f.el.selectedIndex = 0; // Všechny
+      }else if(f.type === "dateRange"){
+        f.el.value = "";
+        f.el2.value = "";
+      }
+    }
+  }
+
+  /******************************************************************
+   * CSV -> DATASET (map CSV headers to TABLE headers)
+   ******************************************************************/
+  function buildCsvToTableIndexMap(csvHeaders){
+    // returns map: tableColIndex -> csvColIndex
+    const map = new Map();
+
+    // table headers norms
+    const tableNorms = state.tableHeaders.map(h => normKey(h));
+
+    // normalize CSV headers and apply alias -> normalized table header
+    const csvNorm = csvHeaders.map(h => normKey(h));
+    for(let ci=0; ci<csvHeaders.length; ci++){
+      let key = csvNorm[ci];
+
+      // alias (csv -> table)
+      if(HEADER_ALIASES[key]) key = HEADER_ALIASES[key];
+
+      // if matches one of table headers, bind it
+      const ti = tableNorms.indexOf(key);
+      if(ti !== -1) map.set(ti, ci);
+    }
+
+    return map;
+  }
+
+  function classifyRowClass(values){
+    // simple “look like your system” coloring:
+    // red = error/insufficient, green = negative, blue = positive, alternate shades
+    const idxAmount = state.headerNormToIndex.get(normKey("Částka")) ?? 3;
+    const idxStatus = state.headerNormToIndex.get(normKey("Status transakce"));
+
+    const amount = String(values[idxAmount] ?? "");
+    const status = idxStatus !== undefined ? String(values[idxStatus] ?? "") : "";
+
+    const isBad = /nedostatek|chyba/i.test(status);
+    if(isBad) return "r-red";
+
+    const isNeg = amount.trim().startsWith("-");
+    // alternate by RP ID if exists
+    const idIdx = state.headerNormToIndex.get(normKey("RP ID")) ?? 0;
+    const rid = parseInt(values[idIdx] || "0", 10) || 0;
+    const alt = (rid % 2 === 0);
+
+    if(isNeg) return alt ? "r-green2" : "r-green";
+    return alt ? "r-blue2" : "r-blue";
+  }
+
+  function renderCell(td, header, value){
+    const h = normKey(header);
+    const v = String(value ?? "");
+
+    // link-ish columns
+    const linkCols = new Set([
+      normKey("Párování"),
+      normKey("Zdrojová peněženka"),
+      normKey("Cílová peněženka")
+    ]);
+
+    if(linkCols.has(h) && v){
+      const span = document.createElement("span");
+      span.className = "linkish";
+      span.textContent = v;
+      td.appendChild(span);
+      return;
+    }
+
+    td.textContent = v;
+  }
+
+  function renderTable(){
+    const tbody = document.getElementById("txBody");
+    if(!tbody) return;
+    tbody.innerHTML = "";
+
+    const start = (state.currentPage - 1) * ROWS_PER_PAGE;
+    const end = Math.min(start + ROWS_PER_PAGE, state.filteredRows.length);
+    const pageRows = state.filteredRows.slice(start, end);
+
+    // last col is "Editace"
+    const editColIndex = state.headerNormToIndex.get(normKey("Editace"));
+
+    for(const row of pageRows){
+      const tr = document.createElement("tr");
+      tr.className = classifyRowClass(row);
+
+      for(let i=0; i<state.tableHeaders.length; i++){
+        const td = document.createElement("td");
+
+        if(editColIndex !== undefined && i === editColIndex){
+          td.className = "col-center";
+          const b = document.createElement("button");
+          b.className = "edit-btn";
+          b.type = "button";
+          b.textContent = "✎";
+          td.appendChild(b);
+        }else{
+          renderCell(td, state.tableHeaders[i], row[i]);
+        }
+
+        tr.appendChild(td);
+      }
+
+      tbody.appendChild(tr);
+    }
+
+    updateHint();
+  }
+
+  /******************************************************************
+   * PAGER
+   ******************************************************************/
+  function renderPager(el, current, total, windowSize = 9){
+    el.innerHTML = "";
+
+    const mk = (txt, cls, disabled = false, page = null) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = cls;
+      b.textContent = txt;
+      if(disabled) b.disabled = true;
+      if(page !== null){
+        b.onclick = () => {
+          state.currentPage = page;
+          renderPager(el, state.currentPage, state.totalPages, windowSize);
+          renderTable();
+        };
+      }
+      return b;
+    };
+
+    el.appendChild(mk("≪", "pbtn", current === 1, 1));
+    el.appendChild(mk("‹", "pbtn", current === 1, current - 1));
+
+    const half = Math.floor(windowSize / 2);
+    let start = Math.max(1, current - half);
+    let end = Math.min(total, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+
+    for(let i = start; i <= end; i++){
+      el.appendChild(
+        mk(String(i), "pnum" + (i === current ? " active" : ""), false, i)
+      );
+    }
+
+    el.appendChild(mk("›", "pbtn", current === total, current + 1));
+    el.appendChild(mk("≫", "pbtn", current === total, total));
+  }
+
+  function updatePager(){
+    state.totalPages = Math.max(1, Math.ceil(state.filteredRows.length / ROWS_PER_PAGE));
+    if(state.currentPage > state.totalPages) state.currentPage = state.totalPages;
+    if(state.currentPage < 1) state.currentPage = 1;
+
+    const el = document.getElementById("pager");
+    if(el) renderPager(el, state.currentPage, state.totalPages, 9);
+  }
+
+  function updateHint(){
+    const parts = [];
+    if(state.allRows.length){
+      parts.push(`Načteno: ${state.allRows.length}`);
+      if(state.filteredRows.length !== state.allRows.length){
+        parts.push(`Filtrované: ${state.filteredRows.length}`);
+      }
+      parts.push(`Strana: ${state.currentPage}/${state.totalPages}`);
+    }else{
+      parts.push(`Tip: Ctrl+Shift+Alt+L načte CSV z URL`);
+    }
+    setHint(parts.join(" • "));
+  }
+
+  /******************************************************************
+   * FILTERING
+   ******************************************************************/
+  function onFilterChange(){
+    applyFilters();
+  }
+
+  function applyFilters(){
+    if(!state.allRows.length){
+      state.filteredRows = [];
+      state.currentPage = 1;
+      updatePager();
+      renderTable();
+      return;
+    }
+
+    let rows = state.allRows;
+
+    for(const f of state.filterControls){
+      if(f.type === "text"){
+        const q = normKey(f.el.value);
+        if(!q) continue;
+
+        rows = rows.filter(r => normKey(r[f.colIndex] ?? "").includes(q));
+      }
+
+      if(f.type === "select"){
+        const val = String(f.el.value || "").trim();
+        if(!val || normKey(val) === normKey("Všechny")) continue;
+
+        const q = normKey(val);
+        rows = rows.filter(r => normKey(r[f.colIndex] ?? "") === q);
+      }
+
+      if(f.type === "dateRange"){
+        const dFrom = parseDateCZ(f.el.value);
+        const dTo = parseDateCZ(f.el2.value);
+
+        if(!dFrom && !dTo) continue;
+
+        rows = rows.filter(r => {
+          const d = parseDateFromZuctovanoCell(r[f.colIndex] ?? "");
+          if(!d) return false;
+          if(dFrom && d < dFrom) return false;
+          if(dTo){
+            const dToEnd = new Date(dTo.getFullYear(), dTo.getMonth(), dTo.getDate(), 23, 59, 59, 999);
+            if(d > dToEnd) return false;
+          }
+          return true;
+        });
+      }
+    }
+
+    state.filteredRows = rows;
+    state.currentPage = 1;
+    updatePager();
+    renderTable();
+  }
+
+  /******************************************************************
+   * CSV LOAD (URL + FILE)
+   ******************************************************************/
+  async function loadCsvFromUrl(){
+    if(!CSV_URL){
+      setHint("CSV_URL je prázdné – doplň URL do kódu, nebo vyber soubor ručně.");
+      document.getElementById("csvFile")?.click();
+      return;
+    }
+
+    try{
+      setHint("Načítám CSV z URL…");
+      const res = await fetch(CSV_URL, { cache: "no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+
+      loadCsvFromText(text);
+    }catch(err){
+      console.error(err);
+      setHint("Nepodařilo se stáhnout CSV z URL → otevřu výběr souboru.");
+      document.getElementById("csvFile")?.click();
+    }
+  }
+
+  function loadCsvFromText(text){
+    const rows = parseCSV(text);
+    const headerIdx = findHeaderRowIndex(rows);
+    if(headerIdx === -1){
+      setHint("V CSV jsem nenašel hlavičku (řádek s 'RP ID').");
+      return;
+    }
+
+    const csvHeaders = rows[headerIdx];
+    const dataRows = rows.slice(headerIdx + 1).filter(r => r.some(x => String(x||"").trim().length));
+
+    const map = buildCsvToTableIndexMap(csvHeaders);
+
+    // build dataset aligned to table headers
+    const dataset = [];
+    for(const r of dataRows){
+      const values = new Array(state.tableHeaders.length).fill("");
+
+      for(let ti=0; ti<state.tableHeaders.length; ti++){
+        const ci = map.get(ti);
+        if(ci !== undefined){
+          values[ti] = r[ci] ?? "";
+        }
+      }
+
+      // columns not in CSV => stay blank (Status, Země, MCC, Podezřelý…)
+      dataset.push(values);
+    }
+
+    state.allRows = dataset;
+    resetFiltersUI();
+    state.filteredRows = dataset;
+    state.currentPage = 1;
+    updatePager();
+    renderTable();
+  }
+
+  /******************************************************************
+   * CSV EXPORT (tlačítko .csv)
+   ******************************************************************/
+  function exportFilteredToCSV(){
+    if(!state.filteredRows.length){
+      setHint("Není co exportovat.");
+      return;
+    }
+
+    const lines = [];
+    const headers = state.tableHeaders.slice();
+
+    // nechceme exportovat "Editace" tlačítko
+    const editIdx = state.headerNormToIndex.get(normKey("Editace"));
+    if(editIdx !== undefined){
+      headers.splice(editIdx, 1);
+    }
+
+    lines.push(headers.map(h => csvEscape(h)).join(";"));
+
+    const amountIdx = state.headerNormToIndex.get(normKey("Částka"));
+
+    for(const row of state.filteredRows){
+      const out = [];
+
+      for(let i=0; i<state.tableHeaders.length; i++){
+        if(editIdx !== undefined && i === editIdx) continue;
+
+        let v = row[i] ?? "";
+        if(amountIdx !== undefined && i === amountIdx){
+          v = normalizeAmountForCZ(v);
+        }
+        out.push(csvEscape(v));
+      }
+
+      lines.push(out.join(";"));
+    }
+
+    const csv = "\uFEFF" + lines.join("\n");
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
+    downloadText(`vsechny-transakce_${stamp}.csv`, csv);
+  }
+
+  function downloadText(filename, text){
+    const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /******************************************************************
+   * HOTKEY + UI WIRING
+   ******************************************************************/
+  function hotkeyMatches(e){
+    const k = String(e.key || "").toLowerCase();
+    return (!!HOTKEY.ctrl === e.ctrlKey) &&
+           (!!HOTKEY.shift === e.shiftKey) &&
+           (!!HOTKEY.alt === e.altKey) &&
+           (k === HOTKEY.key);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+    // ať ti to nekrade psaní ve filtrech
+    if(tag === "input" || tag === "select" || tag === "textarea") return;
+
+    if(hotkeyMatches(e)){
+      e.preventDefault();
+      loadCsvFromUrl();
+    }
+  });
+
+  // file picker fallback
+  document.getElementById("csvFile")?.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    try{
+      const text = await file.text();
+      loadCsvFromText(text);
+      e.target.value = ""; // reset
+    }catch(err){
+      console.error(err);
+      setHint("Chyba při čtení CSV souboru.");
+    }
+  });
+
+  // hamburger collapse
+  (function(){
+    const btn = document.getElementById("hamburger");
+    if(!btn) return;
+
+    // restore
+    try{
+      const saved = localStorage.getItem("rp_sidebar_collapsed");
+      if(saved === "1") document.body.classList.add("sidebar-collapsed");
+    }catch(_){}
+
+    btn.addEventListener("click", () => {
+      document.body.classList.toggle("sidebar-collapsed");
+      try{
+        localStorage.setItem("rp_sidebar_collapsed", document.body.classList.contains("sidebar-collapsed") ? "1" : "0");
+      }catch(_){}
+    });
+  })();
+
+  // buttons
+  document.getElementById("btnCsv")?.addEventListener("click", exportFilteredToCSV);
+
+  document.getElementById("btnPdf")?.addEventListener("click", () => {
+    setHint("PDF export není v tomhle statickém mocku zapojený.");
+  });
+
+  document.getElementById("btnCancelReservations")?.addEventListener("click", () => {
+    setHint("Akce 'Zrušit rezervace' není v tomhle statickém mocku napojená.");
+  });
+
+  /******************************************************************
+   * INIT
+   ******************************************************************/
+  initTableHeaders();
+  initFilters();
+  state.filteredRows = [];
+  updatePager();
+  updateHint();
+
+  </script>
+</body>
+</html>
