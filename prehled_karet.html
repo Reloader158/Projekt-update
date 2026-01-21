@@ -21,6 +21,16 @@
       --shadow:0 1px 2px rgba(0,0,0,.08);
       --menu-gap: 6px;
 
+      --user-orange: #ff8a2a;
+      --user-orange-hover: #ff9b4d;
+      --user-orange-active: #f07c1f;
+
+
+      --settings-sep-color: #000;   /* barva čáry */
+      --settings-sep-opacity: .2;  /* průhlednost */
+      --settings-sep-thickness: 2px;/* tloušťka */
+      --settings-sep-margin: 30px;  /* mezera nad/pod čárou */
+
       /* šířky sloupců (aby filtry seděly nad sloupce) */
       --c-user: 170px;
       --c-vs: 130px;
@@ -100,16 +110,31 @@
       font-weight:900;
     }
     .topbar .spacer{ flex:1; }
+
     .topbar .userbtn{
-      background:#f59e0b;
+      background: var(--user-orange);
       color:#fff;
       border:none;
-      border-radius:4px;
-      padding:7px 10px;
+      border-radius:6px;
+      padding:7px 12px;
       font-weight:900;
       font-size:12px;
       cursor:pointer;
+      box-shadow: 0 1px 0 rgba(0,0,0,.18);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
+
+    .topbar .userbtn:hover{
+      background: var(--user-orange-hover);
+    }
+
+    .topbar .userbtn:active{
+      background: var(--user-orange-active);
+      transform: translateY(1px);
+    }
+
 
     /* Sidebar */
     .sidebar{
@@ -165,14 +190,6 @@
     }
     body.sidebar-collapsed .side-title{ display:none; }
 
-    .menu-section{
-      margin-top:8px;
-      color:var(--muted);
-      font-size:12px;
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      padding:12px 10px 6px;
-    }
     .menu a{
       display:flex;
       align-items:center;
@@ -182,10 +199,43 @@
       text-decoration:none;
       color:#374151;
       font-size:13px;
-      cursor:default;
+      cursor:pointer;
       margin-bottom: var(--menu-gap);
+      transition: background .12s ease, color .12s ease;
     }
-    .menu a:hover{ background:#f8fafc; }
+
+    .menu a:hover{
+      background:#fff7ed;
+      color:#b45309;
+    }
+
+    .menu a:hover .txt{
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .menu a:hover .mi{
+      color:#f59e0b;
+    }
+
+    /* dělící čára nad Nastavením */
+    .menu-parent{
+      position: relative;
+      margin-top: calc(var(--settings-sep-margin) + 6px);
+    }
+
+    .menu-parent::before{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      top: calc(-1 * var(--settings-sep-margin));
+      height: var(--settings-sep-thickness);
+      background: var(--settings-sep-color);
+      opacity: var(--settings-sep-opacity);
+    }
+
+
 
     .mi{ width:18px; height:18px; color:#9ca3af; flex:0 0 auto; }
     .mi svg{ width:18px; height:18px; display:block; fill: currentColor; }
@@ -293,6 +343,16 @@
       margin: 6px 0 8px;
     }
     .meta-inline b{ color:#111827; }
+
+    .menu a.active{
+      background:#ffedd5;
+      color:#9a3412;
+    }
+    .menu a.active .mi{ color:#f59e0b; }
+    .menu a.active .txt{
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
 
     /* Table area */
     .table-shell{
@@ -546,22 +606,84 @@
     </div>
 
     <div class="menu">
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10z"/></svg></span><span class="txt">Přehled stavu</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3ZM8 11c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.14.4-2.1 1.05-2.9C10.2 13.4 9.1 13 8 13Zm8 0c-1.1 0-2.2.4-3.05 1.1.65.8 1.05 1.76 1.05 2.9v2h10v-2c0-2.66-5.33-4-8-4Z"/></svg></span><span class="txt">Zákaznické účty</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M3 4h18v4H3V4Zm0 6h18v10H3V10Zm4 3v2h6v-2H7Z"/></svg></span><span class="txt">Všechny transakce</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Zm0 11h7c-.53 3.79-3.28 7.2-7 8.48V12H5V6.3l7-3.11V12Z"/></svg></span><span class="txt">Všechny poplatky</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2Zm0 10H4V8h16v8Zm-2-6H6v2h12v-2Z"/></svg></span><span class="txt">Přehled karet</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2Zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg></span><span class="txt">Notifikace</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 2c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4Zm-7 10v2h14v-2H5Z"/></svg></span><span class="txt">Bonusy a srážky</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 14H5V8h14v10Zm-2-8H7v2h10v-2Z"/></svg></span><span class="txt">Provozní odstávky</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M3 3h2v18H3V3Zm16 8h2v10h-2V11ZM11 7h2v14h-2V7Zm-4 6h2v8H7v-8Zm8-10h2v18h-2V3Z"/></svg></span><span class="txt">Statistiky a uzávěrky</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M3 17h18v2H3v-2Zm0-5h18v2H3v-2Zm0-5h18v2H3V7Z"/></svg></span><span class="txt">Logy</span></a>
+      <a href="prehled_stavu.html" data-nav="overview">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10z"/></svg></span>
+        <span class="txt">Přehled stavu</span>
+      </a>
 
-      <div class="menu-section">Nastavení</div>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm10 4a8.1 8.1 0 0 0-.14-1.5l2.02-1.57-2-3.46-2.45 1a8.2 8.2 0 0 0-2.6-1.5l-.37-2.6H9.54l-.37 2.6a8.2 8.2 0 0 0-2.6 1.5l-2.45-1-2 3.46L2.14 10.5A8.1 8.1 0 0 0 2 12c0 .5.05 1 .14 1.5l-2.02 1.57 2 3.46 2.45-1a8.2 8.2 0 0 0 2.6 1.5l.37 2.6h4.92l.37-2.6a8.2 8.2 0 0 0 2.6-1.5l2.45 1 2-3.46-2.02-1.57c.09-.5.14-1 .14-1.5Z"/></svg></span><span class="txt">Sledování činnosti práce</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/></svg></span><span class="txt">Odesílání e-mailů</span></a>
-      <a><span class="mi"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 11H7v-2h6V5h2v8Z"/></svg></span><span class="txt">Status RP</span></a>
+      <a href="zakaznicke_ucty.html" data-nav="accounts">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3ZM8 11c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.14.4-2.1 1.05-2.9C10.2 13.4 9.1 13 8 13Zm8 0c-1.1 0-2.2.4-3.05 1.1.65.8 1.05 1.76 1.05 2.9v2h10v-2c0-2.66-5.33-4-8-4Z"/></svg></span>
+        <span class="txt">Zákaznické účty</span>
+      </a>
+
+      <a href="/transakce" data-nav="tx">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 4h18v4H3V4Zm0 6h18v10H3V10Zm4 3v2h6v-2H7Z"/></svg></span>
+        <span class="txt">Všechny transakce</span>
+      </a>
+
+      <a href="/poplatky" data-nav="fees">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Zm0 11h7c-.53 3.79-3.28 7.2-7 8.48V12H5V6.3l7-3.11V12Z"/></svg></span>
+        <span class="txt">Všechny poplatky</span>
+      </a>
+
+      <a href="prehled_karet.html" data-nav="cards">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2Zm0 10H4V8h16v8Zm-2-6H6v2h12v-2Z"/></svg></span>
+        <span class="txt">Přehled karet</span>
+      </a>
+
+      <a href="/notifikace" data-nav="notif">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2Zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg></span>
+        <span class="txt">Notifikace</span>
+      </a>
+
+      <a href="/bonusy" data-nav="bonus">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 2c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4Zm-7 10v2h14v-2H5Z"/></svg></span>
+        <span class="txt">Bonusy a srážky</span>
+      </a>
+
+      <a href="/odstavky" data-nav="outages">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 14H5V8h14v10Zm-2-8H7v2h10v-2Z"/></svg></span>
+        <span class="txt">Provozní odstávky</span>
+      </a>
+
+      <a href="/statistiky" data-nav="stats">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 3h2v18H3V3Zm16 8h2v10h-2V11ZM11 7h2v14h-2V7Zm-4 6h2v8H7v-8Zm8-10h2v18h-2V3Z"/></svg></span>
+        <span class="txt">Statistiky a uzávěrky</span>
+      </a>
+
+      <a href="/logy" data-nav="logs">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 17h18v2H3v-2Zm0-5h18v2H3v-2Zm0-5h18v2H3V7Z"/></svg></span>
+        <span class="txt">Logy</span>
+      </a>
+
+      <!-- "Nastavení" jako sekce/oddělovač (ne dropdown) -->
+      <a href="/nastaveni" class="menu-parent" data-nav="settings">
+        <span class="mi">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm10 4a8.1 8.1 0 0 0-.14-1.5l2.02-1.57-2-3.46-2.45 1a8.2 8.2 0 0 0-2.6-1.5l-.37-2.6H9.54l-.37 2.6a8.2 8.2 0 0 0-2.6 1.5l-2.45-1-2 3.46L2.14 10.5A8.1 8.1 0 0 0 2 12c0 .5.05 1 .14 1.5l-2.02 1.57 2 3.46 2.45-1a8.2 8.2 0 0 0 2.6 1.5l.37 2.6h4.92l.37-2.6a8.2 8.2 0 0 0 2.6-1.5l2.45 1 2-3.46-2.02-1.57c.09-.5.14-1 .14-1.5Z"/>
+          </svg>
+        </span>
+        <span class="txt">Nastavení</span>
+      </a>
+
+      <a href="/sledovani" data-nav="work">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 13h2v8H3v-8Zm4-6h2v14H7V7Zm4 4h2v10h-2V11Zm4-8h2v18h-2V3Zm4 10h2v8h-2v-8Z"/></svg></span>
+        <span class="txt">Sledování činnosti práce</span>
+      </a>
+
+      <a href="/emaily" data-nav="emails">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/></svg></span>
+        <span class="txt">Odesílání e-mailů</span>
+      </a>
+
+      <a href="/status" data-nav="status">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 11H7v-2h6V5h2v8Z"/></svg></span>
+        <span class="txt">Status RP</span>
+      </a>
     </div>
+
+
+
   </aside>
 
   <main class="main">
@@ -1368,6 +1490,28 @@
       }
     });
   });
+
+  (function markActiveMenu(){
+    const path = (location.pathname || "/").toLowerCase();
+
+    const byPath = (a) => {
+      const href = (a.getAttribute("href") || "").toLowerCase();
+      if(!href || href === "#") return false;
+      return path === href || (path.startsWith(href.endsWith("/") ? href : href + "/"));
+    };
+
+    const links = Array.from(document.querySelectorAll(".menu a[href]"));
+    let active = links.find(byPath);
+
+    // fallback pro file:// (lokální soubor)
+    if(!active){
+      active = links.find(a => a.getAttribute("data-nav") === "cards"); // <-- tady je rozdíl
+    }
+
+    if(active) active.classList.add("active");
+  })();
+
+
 
   // Sort arrow clicks => rovnou applyFilters (bez dalšího klikání na Filtr)
   document.getElementById("sortIssuedAsc").addEventListener("click", () => {
