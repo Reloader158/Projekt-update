@@ -22,23 +22,29 @@
       --shadow:0 1px 2px rgba(0,0,0,.08);
       --menu-gap: 6px;
 
-      --user-orange: #ff8a2a;          /* hlavní oranžová */
-      --user-orange-hover: #ff9b4d;    /* hover */
-      --user-orange-active: #f07c1f;   /* klik */
+      --user-orange: #ff8a2a;
+      --user-orange-hover: #ff9b4d;
+      --user-orange-active: #f07c1f;
 
-      /* oddělovač nad Nastavením (stejné jako v Přehledu karet) */
       --settings-sep-color: #000;
       --settings-sep-opacity: .2;
       --settings-sep-thickness: 2px;
       --settings-sep-margin: 30px;
 
-      /* KPI badge (šedivé malé podbuttony) – snadno laditelné */
-      --kpi-badge-bg: #b3b3b3;            /* barva badge */
-      --kpi-badge-color: #fff;            /* barva textu */
-      --kpi-badge-hover-bg: #b3b3b3;      /* hover barva badge (zatím stejná, můžeš změnit) */
-      --kpi-badge-hover-scale: 1.18;      /* zvětšení při hover */
-      --kpi-badge-hover-brightness: 1.00; /* případně 1.08 pro "živější" */
+      --kpi-badge-bg: #b3b3b3;
+      --kpi-badge-color: #fff;
+      --kpi-badge-hover-bg: #b3b3b3;
+      --kpi-badge-hover-scale: 1.18;
+      --kpi-badge-hover-brightness: 1.00;
       --kpi-badge-shadow: 0 1px 0 rgba(0,0,0,.10);
+
+      /* oranžová pro semafor */
+      --kpi-aml-orange: #ff8a2a;
+
+      /* ✅ 3 řádky pro NADPISY – ať se nic neztrácí a všechno je zarovnané */
+      --kpi-label-line: 1.15;
+      --kpi-label-lines: 3;
+      --kpi-label-height: calc(var(--kpi-label-lines) * var(--kpi-label-line) * 1em);
     }
 
     *{ box-sizing:border-box; }
@@ -122,18 +128,10 @@
       align-items:center;
       gap:6px;
     }
+    .topbar .userbtn:hover{ background: var(--user-orange-hover); }
+    .topbar .userbtn:active{ background: var(--user-orange-active); transform: translateY(1px); }
 
-    .topbar .userbtn:hover{
-      background: var(--user-orange-hover);
-    }
-
-    .topbar .userbtn:active{
-      background: var(--user-orange-active);
-      transform: translateY(1px);
-    }
-
-
-    /* Sidebar (stejné jako Přehled karet) */
+    /* Sidebar */
     .sidebar{
       position:fixed;
       top:56px; left:0; bottom:0;
@@ -225,7 +223,6 @@
     .menu .txt{ white-space:nowrap; }
     body.sidebar-collapsed .menu .txt{ display:none; }
 
-    /* dělící čára nad Nastavením (Přehled karet verze) */
     .menu-parent{
       position: relative;
       margin-top: calc(var(--settings-sep-margin) + 6px);
@@ -240,8 +237,6 @@
       background: var(--settings-sep-color);
       opacity: var(--settings-sep-opacity);
     }
-
-   
 
     /* Main */
     .main{
@@ -304,9 +299,7 @@
     }
     .hdr-btn-purple:active{ transform: translateY(1px); }
 
-    /* =======================
-       Přehled stavu (overview)
-       ======================= */
+    /* Přehled stavu */
     .card-body.overview-body{ padding:14px; }
 
     .overview-panel{
@@ -324,29 +317,44 @@
       gap: 28px;
       flex-wrap: wrap;
     }
+
+    /* ✅ sloupec: label + tlačítko vždy uprostřed */
     .kpi-item{
       min-width: 120px;
       flex: 1 1 140px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
       text-align:center;
     }
+
+    /* ✅ fixní výška labelu na 3 řádky + vertikální centrování */
     .kpi-label{
+      width:100%;
+      height: var(--kpi-label-height);
+      margin-bottom:10px;
+      display:flex;
+      align-items:center;     /* vertikálně */
+      justify-content:center; /* horizontálně */
+      padding:0 6px;
+      text-align:center;
+
       font-size:11px;
       color:#374151;
-      margin-bottom:10px;
-      line-height:1.15;
+      line-height: var(--kpi-label-line);
+    }
 
-      /* FIX: sjednocení výšky popisků = přestane to skákat */
-      height: calc(2 * 1.15em);        /* 2 řádky */
-      display: -webkit-box;
-      -webkit-line-clamp: 2;           /* max 2 řádky */
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    /* ✅ žádné ztrácení textu – necháme 3 řádky a hotovo */
+    .kpi-label > span{
+      display:block;
+      white-space:normal;
+      word-break:break-word;
     }
 
     .kpi-pillwrap{
-      position:relative;
-      display:inline-block;
-      padding-right: 26px; /* místo pro badge */
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
     }
 
     .kpi-pill{
@@ -367,14 +375,16 @@
     .kpi-pill.blue{ background:#2f66c4; }
     .kpi-pill.red{  background:#e11d48; }
     .kpi-pill.gray{ background:#a3a3a3; }
+    .kpi-pill.orange{ background: var(--kpi-aml-orange); }
     .kpi-pill:hover{ filter: brightness(.98); }
 
-    /* proklik badge (už není pointer-events:none) */
     .kpi-badge{
-      position:absolute;
-      top:50%;
-      right: 4px;
-      transform: translateY(-50%);
+      /* už NE absolutně */
+      position:relative;
+      top:auto;
+      right:auto;
+      transform:none;
+
       height:18px;
       min-width:28px;
       padding:0 6px;
@@ -389,14 +399,20 @@
       box-shadow: var(--kpi-badge-shadow);
       text-decoration:none;
       user-select:none;
-      transform-origin: center;
+
+      /* ✅ “nalepení” na pill */
+      margin-left:-10px;
+
+      transform-origin:center;
       transition: transform .12s ease, filter .12s ease, background .12s ease;
     }
+
     .kpi-badge:hover{
       background: var(--kpi-badge-hover-bg);
-      transform: translateY(-50%) scale(var(--kpi-badge-hover-scale));
+      transform: scale(var(--kpi-badge-hover-scale));
       filter: brightness(var(--kpi-badge-hover-brightness));
     }
+
     .kpi-badge:focus-visible{
       outline:2px solid rgba(30,102,255,.5);
       outline-offset:2px;
@@ -405,7 +421,6 @@
 </head>
 
 <body>
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="brand">
       <span style="font-size:22px;">RP</span>
@@ -422,7 +437,6 @@
     <button class="userbtn">● Patrik Denemark ▾</button>
   </div>
 
-  <!-- SIDEBAR (stejné jako Přehled karet) -->
   <aside class="sidebar">
     <div class="side-top">
       <button class="hamburger" id="hamburger" title="Menu">
@@ -482,7 +496,6 @@
         <span class="txt">Logy</span>
       </a>
 
-      <!-- "Nastavení" jako sekce/oddělovač (ne dropdown) -->
       <a href="/nastaveni" class="menu-parent" data-nav="settings">
         <span class="mi">
           <svg viewBox="0 0 24 24">
@@ -507,26 +520,18 @@
         <span class="txt">Status RP</span>
       </a>
     </div>
-
-
-
   </aside>
 
-  <!-- MAIN -->
   <main class="main">
     <div class="main-inner">
       <section class="card">
         <div class="card-header">
           <div class="card-icon" aria-hidden="true" title="Přehled stavu">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 3 3 10v11h6v-7h6v7h6V10z"/>
-            </svg>
+            <svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10z"/></svg>
           </div>
 
           <h2>Přehled stavu</h2>
-
           <div class="hdr-spacer"></div>
-
           <button class="hdr-btn-purple" id="btnCancelReservations">Zrušit všechny mé rezervace</button>
         </div>
 
@@ -540,19 +545,12 @@
   </main>
 
   <script>
-    /*****************************************************************
-     * Sidebar hamburger toggle
-     *****************************************************************/
     document.getElementById("hamburger").addEventListener("click", () => {
       document.body.classList.toggle("sidebar-collapsed");
     });
 
-    /*****************************************************************
-     * Aktivní položka menu (podle URL nebo data-nav fallback)
-     *****************************************************************/
     (function markActiveMenu(){
       const path = (location.pathname || "/").toLowerCase();
-
       const byPath = (a) => {
         const href = (a.getAttribute("href") || "").toLowerCase();
         if(!href || href === "#") return false;
@@ -561,19 +559,12 @@
 
       const links = Array.from(document.querySelectorAll(".menu a[href]"));
       let active = links.find(byPath);
-
       if(!active){
         active = links.find(a => a.getAttribute("data-nav") === "overview");
       }
       if(active) active.classList.add("active");
     })();
 
-    /*****************************************************************
-     * DATA + RENDER "Přehled stavu"
-     * - mainCount = číslo na barevném tlačítku (hlavní proklik)
-     * - badgeCount = šedivé nalepené číslo (samostatný proklik)
-     * - badgeHref = kam vede badge (když není, použije se href)
-     *****************************************************************/
     const KPI = [
       { label: "Nespárované vklady", mainCount: 0, color: "blue", href: "/vklady/nesparovane" },
 
@@ -581,7 +572,7 @@
 
       { label: "Druhý doklad", mainCount: 60, badgeCount: 174, color: "red", href: "/druhy-doklad", badgeHref: "/druhy-doklad/badge" },
 
-      { label: "AML doklad", mainCount: 0, color: "blue", href: "/aml" },
+      { label: "AML doklad", mainCount: 0, badgeCount: 0, color: "blue", href: "/aml", badgeHref: "/aml/badge" },
 
       { label: "Provést aktivaci /\nRegistrace BÚ\ndokončena", mainCount: 227, badgeCount: 1022, color: "red", href: "/aktivace", badgeHref: "/aktivace/badge" },
 
@@ -590,6 +581,9 @@
       { label: "Ve vývoji:\nVypořádání zůstatku", mainCount: 515, color: "gray", href: "/vyvoj-vyporadani" },
 
       { label: "Podezřelé transakce", mainCount: 0, color: "blue", href: "/podezrele-transakce" },
+
+      { label: "AML limit", mainCount: 1, color: "orange", href: "" },
+      { label: "Bank iD", mainCount: 1, color: "orange", href: "" },
 
       { label: "Alerty uživatelé", mainCount: 867, badgeCount: 10589, color: "red", href: "/alerty-uzivatele", badgeHref: "/alerty-uzivatele/badge" },
 
@@ -611,7 +605,7 @@
       const grid = document.getElementById("kpiGrid");
 
       grid.innerHTML = KPI.map(k => {
-        const label = escapeHtml(k.label).replaceAll("\n","<br>");
+        const labelHtml = escapeHtml(k.label).replaceAll("\n","<br>");
 
         const badgeHref = k.badgeHref || k.href || "#";
         const badge = (k.badgeCount !== undefined && k.badgeCount !== null)
@@ -620,9 +614,9 @@
 
         return `
           <div class="kpi-item">
-            <div class="kpi-label">${label}</div>
+            <div class="kpi-label"><span>${labelHtml}</span></div>
             <div class="kpi-pillwrap">
-              <a class="kpi-pill ${k.color}" href="${escapeHtml(k.href)}" title="${escapeHtml(k.label)}">${escapeHtml(k.mainCount)}</a>
+              <a class="kpi-pill ${escapeHtml(k.color)}" href="${escapeHtml(k.href || "#")}" title="${escapeHtml(k.label)}">${escapeHtml(k.mainCount)}</a>
               ${badge}
             </div>
           </div>
@@ -632,9 +626,6 @@
 
     renderKpi();
 
-    /*****************************************************************
-     * Demo akce – zrušit rezervace (tady si napojíš API)
-     *****************************************************************/
     document.getElementById("btnCancelReservations").addEventListener("click", () => {
       alert("Zrušit všechny mé rezervace (demo) – tady napojíš backend/API.");
     });
