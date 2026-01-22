@@ -235,6 +235,7 @@
       display:flex;
       align-items:center;
       gap:12px;
+      position: relative;
     }
     .card-icon{
       width:28px; height:28px;
@@ -254,26 +255,26 @@
     .hdr-spacer{ flex:1; }
 
     /* pager (vzhled jako screenshot: modrý pás + světlé tlačítka) */
+    /* pager = na střed MONITORU (viewportu), i když je obsah odsazen sidebar-em */
     .pager{
       display:flex;
       align-items:center;
       justify-content:center;
       gap:6px;
       user-select:none;
-      flex: 0 0 auto;
-      margin-right: 10px;
-
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.18);
-      padding: 6px 8px;
-      border-radius: 10px;
 
       position: absolute;
-      left: 50%;
+      /* 50vw = střed monitoru, mínus odsazení layoutu (sidebar + padding main + padding header) */
+      left: calc(50vw - var(--sidebar-w) - 16px - 14px);
       transform: translateX(-50%);
-      margin-right: 0; /* zruš to, co tam bylo */
       z-index: 2;
     }
+
+    /* když je sidebar zkolabovaný, přepočítáme */
+    body.sidebar-collapsed .pager{
+      left: calc(50vw - var(--sidebar-w-collapsed) - 16px - 14px);
+    }
+
 
     .pager .pbtn,
     .pager .pnum{
@@ -309,6 +310,7 @@
       color:#c81e1e;
       box-shadow: inset 0 0 0 2px rgba(200,30,30,.25), 0 1px 0 rgba(0,0,0,.12);
     }
+
 
     .hdr-tools{
       display:flex;
@@ -415,6 +417,22 @@
       white-space:nowrap;
       vertical-align:middle;
     }
+    /* zebra (každý druhý řádek lehce našedivělý) */
+    tbody tr:nth-child(even) td{
+      box-shadow: inset 0 0 0 9999px rgba(0,0,0,.05);
+    }
+
+    /* hover zvýraznění řádku */
+    tbody tr:hover td{
+      box-shadow: inset 0 0 0 9999px rgba(255,255,255,.20);
+    }
+
+    /* když je řádek tmavě modrý (dokončeno), přepneme text do bílé */
+    tbody tr.is-dark td{ color:#fff; }
+    tbody tr.is-dark .linkish{ color:#fff; }
+    tbody tr.is-dark .edit-btn{ background:#fff; color:#2f66c4; }
+
+
 
     /* row colors like your system */
     tr.r-green  td{ background:#b7ffcb; }
@@ -750,13 +768,30 @@
   // stránkování
   const ROWS_PER_PAGE = 500;
 
+  // RP ID, která mají být VŽDY #FF9999
+  const FORCE_RED_RP_IDS = new Set([
+    6095, // to z fotky
+    6048,6035,6021,6005,5997,5987,5974,5967,5966,5956,5955,5954,5953,5952,5946,
+    5928,5907,5889,5865,5863,5862,5858,5844,5843,5828,5820,5798,5786,5785,5770,
+    5748,5745,5743,5742,5737,5736,5735,5734,5728,5373,5208
+  ]);
+
+
   // Alias mapování CSV hlaviček -> tabulkové hlavičky (kvůli pomlčkám apod.)
   // (Tvůj CSV má např. "BÚ příjemce - číslo", tabulka má "BÚ příjemce – číslo")
-    const HEADER_ALIASES = {
+  const HEADER_ALIASES = {  
     // CSV (má "-") vs tabulka (má "–")
     "bu prijemce - cislo": "bu prijemce – cislo",
-    "bu prijemce - nazev": "bu prijemce – nazev"
+    "bu prijemce - nazev": "bu prijemce – nazev",
+
+    // z vašeho exportu (často zkrácené názvy)
+    "status tran": "status transakce",
+    "zeme obch": "zeme obchodnika",
+    "podezrely": "podezrely obchod",
+    "plat. system": "plat. system"
   };
+
+
 
   /******************************************************************
    * GLOBÁLNÍ STAV
@@ -982,27 +1017,74 @@
     return map;
   }
 
-  function classifyRowClass(values){
-    // simple “look like your system” coloring:
-    // red = error/insufficient, green = negative, blue = positive, alternate shades
-    const idxAmount = state.headerNormToIndex.get(normKey("Částka")) ?? 3;
-    const idxStatus = state.headerNormToIndex.get(normKey("Status transakce"));
+  function rowColorFromRules(values){
+    const idx = (name) => state.headerNormToIndex.get(normKey(name));
 
-    const amount = String(values[idxAmount] ?? "");
-    const status = idxStatus !== undefined ? String(values[idxStatus] ?? "") : "";
+    const get = (name) => {
+      const i = idx(name);
+      return i === undefined ? "" : String(values[i] ?? "").trim();
+    };
+    const lower = (name) => get(name).toLowerCase();
 
-    const isBad = /nedostatek|chyba/i.test(status);
-    if(isBad) return "r-red";
+    // RP ID (pro vynucenou červenou)
+    const rpIdRaw = get("RP ID");
+    const rpId = parseInt(String(rpIdRaw).replace(/[^\d]/g, ""), 10) || 0;
 
-    const isNeg = amount.trim().startsWith("-");
-    // alternate by RP ID if exists
-    const idIdx = state.headerNormToIndex.get(normKey("RP ID")) ?? 0;
-    const rid = parseInt(values[idIdx] || "0", 10) || 0;
-    const alt = (rid % 2 === 0);
+    const podezrely = lower("Podezřelý obchod");     // "ano"/"ne"
+    const castka    = get("Částka");                 // "-100 Kč" atd.
+    const jmeno     = lower("Jméno plátce");
+    const buNazev   = lower("BÚ příjemce – název");
+    const typ       = lower("Typ pohybu");
+    const platSys   = lower("Plat. systém");         // "ano"/"ne"
 
-    if(isNeg) return alt ? "r-green2" : "r-green";
-    return alt ? "r-blue2" : "r-blue";
+    // 1) Podezřelý obchod ANO (nejvyšší priorita)
+    if(podezrely === "ano") return "#CDCDCD";
+
+    // 2) Vynucená červená dle seznamu RP ID
+    // (pokud bys chtěl, aby to přebilo i podezřelý obchod, dej tohle nad bod 1)
+    if(typeof FORCE_RED_RP_IDS !== "undefined" && FORCE_RED_RP_IDS.has(rpId)) {
+      return "#FF9999";
+    }
+
+    // 3) Výjimka: Plat. systém NE + BÚ příjemce – název obsahuje SMSVYSLEDKY... => #B3FFCC
+    // (tohle musí být před "SMSVYSLEDKY modrá", aby ta výjimka vůbec platila)
+    if(platSys === "ne" && buNazev.includes("smsvysledky s.r.o.")) {
+      return "#B3FFCC";
+    }
+
+    // 4) SMSVYSLEDKY (jméno plátce nebo BÚ název) má přednost i před mínus částkou
+    if(jmeno.includes("smsvysledky s.r.o.") || buNazev.includes("smsvysledky s.r.o.")) {
+      return "#CCE6FF";
+    }
+
+    // 5) Plat. systém NE a Typ pohybu je prázdný => #B3FFCC
+    if(platSys === "ne" && typ === "") {
+      return "#B3FFCC";
+    }
+
+    // 6) Dobití RP má přednost i když je Plat. systém ANO
+    if(typ === "dobití rp") {
+      return "#C1F2DF";
+    }
+
+    // 7) Plat. systém ANO a typ pohybu je cokoliv jiného než Dobití RP => #B3FFCC
+    if(platSys === "ano" && typ !== "dobití rp") {
+      return "#B3FFCC";
+    }
+
+    // 8) Záporné částky (až po SMSVYSLEDKY + po Dobití pravidlech)
+    if(/^\s*-/.test(castka)) {
+      return "#FF9999";
+    }
+
+    return "";
   }
+
+
+
+
+
+
 
   function renderCell(td, header, value){
     const h = normKey(header);
@@ -1040,7 +1122,17 @@
 
     for(const row of pageRows){
       const tr = document.createElement("tr");
-      tr.className = classifyRowClass(row);
+
+      const bg = rowColorFromRules(row);
+      if(bg){
+        tr.style.backgroundColor = bg;
+
+        // tmavá modrá -> bílé písmo (aby to bylo čitelné)
+        if(bg.toLowerCase() === "#3674d8"){
+          tr.classList.add("is-dark");
+        }
+      }
+
 
       for(let i=0; i<state.tableHeaders.length; i++){
         const td = document.createElement("td");
@@ -1115,18 +1207,12 @@
   }
 
   function updateHint(){
-    const parts = [];
-    if(state.allRows.length){
-      parts.push(`Načteno: ${state.allRows.length}`);
-      if(state.filteredRows.length !== state.allRows.length){
-        parts.push(`Filtrované: ${state.filteredRows.length}`);
-      }
-      parts.push(`Strana: ${state.currentPage}/${state.totalPages}`);
-    }else{
-      parts.push(`Tip: Ctrl+Shift+Alt+L načte CSV z URL`);
-    }
-    setHint(parts.join(" • "));
+    setHint("");   // nebo jen: return;
+    return;
+
+    // zbytek může zůstat, ale už se nikdy nespustí
   }
+
 
   /******************************************************************
    * FILTERING
@@ -1377,6 +1463,14 @@
   state.filteredRows = [];
   updatePager();
   updateHint();
+
+  // AUTO-LOAD po načtení stránky (jen když je vyplněné CSV_URL)
+  window.addEventListener("load", () => {
+    if(CSV_URL && CSV_URL.trim().length > 0){
+      loadCsvFromUrl();
+    }
+  });
+
 
   </script>
 </body>
