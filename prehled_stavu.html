@@ -352,9 +352,10 @@
     }
 
     .kpi-pillwrap{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+      position: relative;
+      display: inline-block;   /* šířka = jen základní pill */
+      align-items: center;
+      justify-content: center;
     }
 
     .kpi-pill{
@@ -378,12 +379,19 @@
     .kpi-pill.orange{ background: var(--kpi-aml-orange); }
     .kpi-pill:hover{ filter: brightness(.98); }
 
+    .kpi-pillwrap{
+      position: relative;
+      display: inline-block;   /* šířka = jen základní pill */
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* badge už NEbude roztahovat šířku */
     .kpi-badge{
-      /* už NE absolutně */
-      position:relative;
-      top:auto;
-      right:auto;
-      transform:none;
+      position: absolute;
+      left: 100%;              /* nalepí se na pravý okraj pill */
+      top: 50%;
+      transform: translate(-10px, -50%); /* lehce přesah do pill + vertikálně doprostřed */
 
       height:18px;
       min-width:28px;
@@ -400,18 +408,17 @@
       text-decoration:none;
       user-select:none;
 
-      /* ✅ “nalepení” na pill */
-      margin-left:-10px;
-
+      margin-left: 0;          /* důležité: pryč s tím starým “nalepením” */
       transform-origin:center;
       transition: transform .12s ease, filter .12s ease, background .12s ease;
     }
 
     .kpi-badge:hover{
       background: var(--kpi-badge-hover-bg);
-      transform: scale(var(--kpi-badge-hover-scale));
+      transform: translate(-10px, -50%) scale(var(--kpi-badge-hover-scale));
       filter: brightness(var(--kpi-badge-hover-brightness));
     }
+
 
     .kpi-badge:focus-visible{
       outline:2px solid rgba(30,102,255,.5);
