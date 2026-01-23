@@ -1030,12 +1030,58 @@
     const ALL_ROWS = makeRows(650);
     let VIEW_ROWS = [...ALL_ROWS];
 
+    // === FIXNÍ 1. ŘÁDEK (není součást VIEW_ROWS ani stránkování) ===
+    const FIXED_ROW = {
+      id: "—",                 // nebo "1" pokud chceš, ale pak pozor na kolize
+      vs: "39580463",
+      name: "Patrik Denemark (klient)",
+      phone: "776020665",
+      email: "patrikdenemark@gmail.com",
+      doc1: "schváleno",
+      doc2: "schváleno",
+      active: "ano",
+      balance: 2.12,
+      bad: "ne",
+      url: "index.html"        // SEM dej přesnou URL na “index / úpravu uživatele”
+    };
+
+    function renderFixedRow(){
+      // klikací jméno
+      const nameLink = `<a href="${escapeHtml(FIXED_ROW.url)}" class="row-link">${escapeHtml(FIXED_ROW.name)}</a>`;
+
+      return `
+        <tr class="fixed-row">
+          <td>${escapeHtml(FIXED_ROW.id)}</td>
+          <td>${escapeHtml(FIXED_ROW.vs)}</td>
+          <td>${nameLink}</td>
+          <td>${escapeHtml(FIXED_ROW.phone)}</td>
+          <td>${escapeHtml(FIXED_ROW.email)}</td>
+          <td>${escapeHtml(FIXED_ROW.doc1)}</td>
+          <td>${escapeHtml(FIXED_ROW.doc2)}</td>
+          <td>${escapeHtml(FIXED_ROW.active)}</td>
+          <td>${escapeHtml(formatMoneyCZK(FIXED_ROW.balance))}</td>
+          <td>${escapeHtml(FIXED_ROW.bad)}</td>
+
+          <!-- akce (u fixního řádku je klidně necháme disabled, aby nespadly do demo handlerů) -->
+          <td class="right">
+            <button class="btn-mini edit" type="button" disabled>✎</button>
+          </td>
+          <td>
+            <button class="btn-mini reserve" type="button" disabled>Rezervovat</button>
+          </td>
+        </tr>
+      `;
+    }
+
+
     function render(rows){
       const shell = document.getElementById("tableShell");
       const prevTop = shell.scrollTop;
       const prevLeft = shell.scrollLeft;
 
-      tbody.innerHTML = rows.map(r => `
+      tbody.innerHTML =
+      renderFixedRow() +
+      rows.map(r => `
         <tr>
           <td>${escapeHtml(r.id)}</td>
           <td>${escapeHtml(r.vs)}</td>
