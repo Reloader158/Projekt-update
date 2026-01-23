@@ -1060,7 +1060,7 @@
                   <option>6. pořadí (zvláštní případy k řešení)</option>
                   <option>7. pořadí (nepřednostní pořadí reg. bu)</option>
                   <option>8. pořadí (plánované ukončení OV)</option>
-                  <option>9. přejmenovat</option>
+                  <option>9. pořadí (nižší priorita)</option>
                 </select>
               </div>
 
@@ -1109,13 +1109,24 @@
 
                 <div class="kyc-row">
                   <div class="kyc-left">
-                    <div class="kyc-title"><span class="kyc-ok">✓</span> AML dokument</div>
-                    <a class="kyc-link" href="#">AML dokument – Otevřít Obrázek</a>
+                    <div class="kyc-title"><span class="kyc-ok">✓</span> AML dokument a 100% Limit</div>
+                    <a class="kyc-link" href="#">AML dokument 100% Limit – Otevřít Obrázek</a>
                   </div>
                   <div class="kyc-tags">
                     <span class="kyc-tag">A</span>
                   </div>
                 </div>
+                
+                <div class="kyc-row">
+                  <div class="kyc-left">
+                    <div class="kyc-title"><span class="kyc-ok">✓</span> AML Limit 75%</div>
+                    <a class="kyc-link" href="#">AML Limit 75% – Otevřít Obrázek</a>
+                  </div>
+                  <div class="kyc-tags">
+                    <span class="kyc-tag">A</span>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -1321,7 +1332,7 @@
 
                   <div class="field">
                     <div class="label red">Nekalé jednání</div>
-                    <select class="sel">
+                    <select class="sel" id="nekaleJednani">
                       <option>Ne</option>
                       <option>Ano</option>
                     </select>
@@ -1349,8 +1360,8 @@
                   <div class="field">
                     <div class="label gray">Bankovní účet identifikován (1 Kč ověřovací platba)</div>
                     <select class="sel">
-                      <option>Ano</option>
                       <option>Ne</option>
+                      <option>Ano</option>
                     </select>
                   </div>
 
@@ -1447,7 +1458,7 @@
               </div>
 
               <div class="actions">
-                <button class="btn blue" type="button">Dokončit editaci</button>
+                <button class="btn blue" type="button" id="btnDokoncitEditaci">Dokončit editaci</button>
                 <button class="btn yellow" type="button">Transakční historie</button>
                 <button class="btn green" type="button">Detail karty uživatele</button>
                 <button class="btn red" type="button">Vytvořit obchodnický účet</button>
@@ -1696,6 +1707,25 @@
         return;
       }
     });
+
+    (function(){
+      const TARGET_URL = "index2.html";
+
+      const sel = document.getElementById("nekaleJednani");
+      const btn = document.getElementById("btnDokoncitEditaci");
+      if(!sel || !btn) return;
+
+      btn.addEventListener("click", (e) => {
+        if ((sel.value || "").trim() === "Ano") {
+          window.location.href = TARGET_URL; // stejné okno / stejná záložka
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    })();
+
+
   </script>
 
 
