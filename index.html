@@ -1049,8 +1049,14 @@
                 <div class="label gray">Kategorie AML</div>
                 <select class="sel">
                   <option>1. pořadí (nové či před ověřením)</option>
-                  <option>2. pořadí</option>
-                  <option>3. pořadí</option>
+                  <option>2. pořadí (znovu vrátit jeden doklad)</option>
+                  <option>3. pořadí (znovu vrátit všechny doklady)</option>
+                  <option>4. pořadí (AML dokument k nahrání)</option>
+                  <option>5. pořadí (klient dodá č. bu)</option>
+                  <option>6. pořadí (zvláštní případy k řešení)</option>
+                  <option>7. pořadí (nepřednostní pořadí reg. bu)</option>
+                  <option>8. pořadí (plánované ukončení OV)</option>
+                  <option>9. přejmenovat</option>
                 </select>
               </div>
 
@@ -1118,7 +1124,7 @@
                 <!-- LEFT -->
                 <div class="bottom-col">
                   <div class="field">
-                    <div class="label orange">Roční transakční limit zbývá</div>
+                    <div class="label orange">Roční transakční limit zbývá:</div>
                     <div class="inline-3">
                       <input class="in" value="2000000" />
                       <div class="zmid">z</div>
@@ -1127,7 +1133,7 @@
                   </div>
 
                   <div class="field">
-                    <div class="label orange">Max. denní nabití peněženky zbývá</div>
+                    <div class="label orange">Max. denní nabití peněženky zbývá:</div>
                     <div class="inline-3">
                       <input class="in" value="200000" />
                       <div class="zmid">z</div>
@@ -1136,7 +1142,7 @@
                   </div>
 
                   <div class="field">
-                    <div class="label orange">Okamžitý limit zůstatku peněz zbývá</div>
+                    <div class="label orange">Okamžitý limit zůstatku peněz zbývá:</div>
                     <div class="inline-3">
                       <input class="in" value="499998" />
                       <div class="zmid">z</div>
@@ -1145,7 +1151,7 @@
                   </div>
 
                   <div class="field">
-                    <div class="label orange">Denní transakční limit (vč. karetních limitů zbývá)</div>
+                    <div class="label orange">Denní transakční limit (vč. karetních limitů zbývá):</div>
                     <div class="inline-3">
                       <input class="in" value="200000" />
                       <div class="zmid">z</div>
@@ -1164,7 +1170,7 @@
                   </div>
 
                   <div class="field" style="margin-bottom:12px;">
-                    <div class="label orange">Max. denní výběr z bankomatu zbývá</div>
+                    <div class="label orange">Max. denní výběr z bankomatu zbývá:</div>
                     <div class="inline-3">
                       <input class="in" value="" />
                       <div class="zmid">z</div>
@@ -1283,11 +1289,29 @@
                   </div>
 
                   <div class="field">
-                    <div class="label red">AML limit všechny transakce zbývá</div>
+                    <div class="label red">AML limit všechny transakce zbývá:</div>
                     <div class="inline-3">
                       <input class="in" value="200000" />
                       <div class="zmid">z</div>
                       <input class="in" value="200000" />
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <div class="label red">AML měsíční limit 75% zbývá</div>
+                    <div class="inline-3">
+                      <input class="in" value="15000" />
+                      <div class="zmid">z</div>
+                      <input class="in" value="15000" />
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <div class="label red">AML měsíční limit 100% zbývá</div>
+                    <div class="inline-3">
+                      <input class="in" value="20000" />
+                      <div class="zmid">z</div>
+                      <input class="in" value="20000" />
                     </div>
                   </div>
 
