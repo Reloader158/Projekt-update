@@ -463,7 +463,7 @@
       padding-top:4px;
     }
     .checktitle{
-      font-size:18px;
+      font-size:25px;
       font-weight:900;
       color:#2563eb;
     }
@@ -473,7 +473,7 @@
       line-height:1.35;
     }
     .dot{
-      width:30px; height:30px;
+      width:38px; height:38px;
       border-radius:999px;
       background: var(--ok);
       box-shadow: 0 1px 0 rgba(0,0,0,.10);
@@ -697,7 +697,11 @@
       box-shadow: 0 25px 80px rgba(0,0,0,.35);
     }
 
-
+    /* AML přesně pod Pepcheck (2. řada, 1. sloupec) */
+    .checklist.aml-check{
+      grid-column: 1;
+      grid-row: 2;
+    }
 
 
   </style>
@@ -1494,6 +1498,11 @@
                 </div>
                 <button class="mini-btn" type="button">✎ Kontrola Podvodu na bazaru</button>
               </div>
+            </div>
+
+            <div class="checklist aml-check">
+              <div class="checktitle">AML</div>
+              <div class="dot" title="OK"></div>
             </div>
 
             <div class="notes">
