@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rychlá Peněženka</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #888;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            color: #d32f2f;
+        }
+        .button:hover {
+            background-color: #fbc02d;
+        }
+        .button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #fdd835;
+            color: #d32f2f;
+            border: 2px solid #d32f2f;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .popup {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 65%;
+            height: 70%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .controls {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            width: 95%;
+        }
+        .reset-btn, .toggle-prefix {
+            background: gray;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .admin-btn, .client-btn {
+            background: green;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        .client-btn {
+            background: blue;
+        }
+        .close-btn {
+            margin-top: 20px;
+            background: red;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .template-container {
+            width: 95%;
+            margin-top: 20px;
+            font-size: 20px;
+        }
+        .template-select {
+            width: 100%;
+            font-size: 18px;
+            padding: 10px;
+        }
+        .template-link {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .warning-message {
+            display: none;
+            width: 95%;
+            padding: 10px;
+            background-color: #f0f5ff;
+            text-align: center;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .warning-message strong {
+            color: red;
+            display: block;
+        }
+        .dropdown-list {
+            position: absolute;
+            width: 95%;
+            background: white;
+            border: 1px solid #ccc;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            z-index: 100;
+        }
+        .dropdown-list li {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .dropdown-list li:hover {
+            background: #f0f0f0;
+        }
+        .aml-container {
+            position: relative;
+            width: 95%;
+        }
+        .aml-log {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            white-space: pre-wrap;
+            pointer-events: none; /* Zabrání editaci */
+            overflow: auto;
+        }
+        .aml-log span {
+            color: inherit;
+        }
+        .text-area {
+            width: 95%;
+            height: 150px;
+            font-family: Arial, sans-serif;
+            margin-bottom: 10px;
+            position: relative;
+            background: transparent;
+            color: black;
+            caret-color: black; /* Zajišťuje viditelnost kurzoru */
+        }
+        .long-btn {
+            background-color: orange;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-left: auto;
+            border: none;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .long-btn:hover {
+            background-color: darkorange;
+        }
+        #longNote {
+            height: 40px; /* Dvě řádky textu */
+            resize: none; /* Zakáže změnu velikosti */
+        }
+        .rf-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .rf-btn {
+            padding: 3px 6px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background-color: white;
+            transition: 0.2s;
+        }
+        .error-message {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .rf-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .rf-btn[data-rf="2"] { background-color: blue; color: white; }
+        .rf-btn[data-rf="3"] { background-color: goldenrod; color: black; }
+        .rf-btn[data-rf="4"] { background-color: red; color: white; }
+        .rf-btn:hover { opacity: 0.8; }
+
+        .aml-log span.rf-2 { font-weight: bold; color: blue; }
+        .aml-log span.rf-3 { font-weight: bold; color: goldenrod; }
+        .aml-log span.rf-4 { font-weight: bold; color: red; }
+        
+    </style>
+</head>
+<body>
+    <h1>Rychlá Peněženka</h1>
+    <button class="button" onclick="openPopup()">Poznámka</button>
+
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup">
+            <!-- Dlouhodobá poznámka -->
+            <label for="longNote">Dlouhodobá poznámka:</label>
+            <textarea id="longNote" class="text-area" oninput="updateSubmitButton();"></textarea>
+
+            <div class="controls">
+                <button class="reset-btn" onclick="resetField('longNote')">↺</button>
+                <button class="long-btn" onclick="submitLongNote()">Vytvořit dlouhodobou poznámku</button>
+            </div>
+            <label for="amlLog">AML Log:</label>
+
+            
+            <textarea id="amlLog" class="text-area"oninput="updateSubmitButton(); updateRFToggles(); formatAMLText(); toggleWarning()">AML Log:</textarea>
+    
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+            <div class="controls">
+                <button class="reset-btn" onclick="resetField('amlLog')">↺</button>
+                <button class="toggle-prefix" onclick="togglePrefix()">AML Log: ✔</button>
+
+                <!-- RF tlačítka uvnitř controls -->
+                <div class="rf-controls">
+                    <span>RF 2:</span>
+                    <button class="rf-btn" data-rf="2" onclick="changeRF(2, -1)">-1</button>
+                    <button class="rf-btn" data-rf="2" onclick="changeRF(2, 1)">+1</button>
+
+                    <span>RF 3:</span>
+                    <button class="rf-btn" data-rf="3" onclick="changeRF(3, -1)">-1</button>
+                    <button class="rf-btn" data-rf="3" onclick="changeRF(3, 1)">+1</button>
+
+                    <span>RF 4:</span>
+                    <button class="rf-btn" data-rf="4" onclick="changeRF(4, -1)">-1</button>
+                    <button class="rf-btn" data-rf="4" onclick="changeRF(4, 1)">+1</button>
+                </div>
+
+                <button class="admin-btn">Vytvořit poznámku pro administrátora</button>
+            </div>
+
+            <div id="warningMessage" class="warning-message">
+                <strong>JE NUTNÉ KLIENTOVI RUČNĚ DOPLNIT ÚROVEŇ RIZIKOVÝCH FAKTORŮ.</strong>
+                (např.: každý má defaultně Úroveň RF 2 (1x) za provedení posouzení na dálku.)
+            </div>
+            <label for="clientNote">Poznámka pro klienta:</label>
+            <textarea id="clientNote" class="text-area" oninput="updateSubmitButton()"></textarea>
+            <div class="controls">
+                <button class="reset-btn" onclick="resetField('clientNote')">↺</button>
+                <button class="client-btn">Vytvořit poznámku pro klienta</button>
+            </div>
+
+            <div class="template-container">
+                <label for="templateSearch">Šablona:</label>
+                <input type="text" id="templateSearch" class="template-select" placeholder="Vyber šablonu..." oninput="filterTemplates()">
+                <ul id="templateList" class="dropdown-list"></ul>
+            </div>
+
+            <button id="submitButton" class="close-btn" onclick="closePopup()">Vytvořit obě poznámky</button>
+            <a href="https://docs.google.com/spreadsheets/d/1FW7PYa055o5iGO2gC1NnpUkVz_LAr_CygZd4Uh-paMw/edit?gid=785093446#gid=785093446" class="template-link" target="_blank">Přehled šablon</a>
+        </div>
+    </div>
+
+    <script>
+        let prefixEnabled = true;
+
+        function openPopup() {
+            document.getElementById('popupOverlay').style.display = 'flex';
+        }
+
+        function closePopup() {
+            document.getElementById('popupOverlay').style.display = 'none';
+        }
+
+        const templates = {
+            "": { longNote: "", aml: "", client: "" },
+            "01. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil A. Ověření vlastníka bankovního účtu bude probíhat.", client: "" },
+
+            "02. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil A. Po znovudodání druhého dokladu bude probíhat ověření vlastníka bankovního účtu.", client: "Dobrý den, Váš druhý doklad byl zamítnut. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "03. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil B. Po znovudodání druhého dokladu bude probíhat ověření vlastníka bankovního účtu.", client: "Dobrý den, hlavní doklad byl zamítnut. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "04. abc-def-ghi-jkl": { longNote: "", aml: "PKontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil A. Ověření vlastníka bankovního účtu zatím neproběhlo, neboť klient musí dodat číslo svého bankovního účtu, k čemuž bude notifikován.", client: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz." }, 
+
+            "05. abc-def-ghi-jkl": { longNote: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz.", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil A. Po znovudodání druhého dokladu bude probíhat ověření vlastníka bankovního účtu. Ověření vlastníka bankovního účtu zatím neproběhlo, neboť klient musí dodat číslo svého bankovního účtu, k čemuž bude notifikován.", client: "Dobrý den, Váš druhý doklad byl zamítnut. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "06. abc-def-ghi-jkl": { longNote: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz.", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil A. Po znovudodání hlavního dokladu bude probíhat ověření vlastníka bankovního účtu. Ověření vlastníka bankovního účtu zatím neproběhlo, neboť klient musí dodat číslo svého bankovního účtu, k čemuž bude notifikován.", client: "Dobrý den, Váš hlavní doklad byl zamítnut. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "07. abc-def-ghi-jkl": { longNote: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz.", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil A. Po znovudodání obou dokladů bude probíhat ověření vlastníka bankovního účtu. Ověření vlastníka bankovního účtu zatím neproběhlo, neboť klient musí dodat číslo svého bankovního účtu, k čemuž bude notifikován. ", client: "Dobrý den, Vaše doklady byly zamítnuty. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "08. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil A. Po znovudodání obou dokladů bude probíhat ověření vlastníka bankovního účtu. ", client: "Dobrý den, Vaše doklady byly zamítnuty. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "09. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal oba doklady, nyní bude probíhat ověření vlastníka bankovního účtu.", client: "" },
+
+            "10. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal hlavní doklad, nyní bude probíhat ověření vlastníka bankovního účtu.", client: "" },
+
+            "11. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal druhý doklad, nyní bude probíhat ověření vlastníka bankovního účtu.", client: "" },
+
+            "12. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal hlavní doklad ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "Dobrý den, Váš hlavní doklad byl zamítnut. Prosím dbejte na to, aby fotografie byly čitelné, bez odlesků a stínů, s viditelnými okraji a nejlépe pořízené na pevném povrchu. Prsty, předměty a metadata (například datum pořízení fotografie nebo model fotoaparátu) nesmí zakrývat žádnou část dokladu na fotografii. Děkujeme." },
+
+            "13. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Systém zamítl Váš hlavní doklad, evidujeme již v systému nové číslo Vašeho občanského dokladu, u kterého je zapotřebí pořídit snímek, aby bylo možné v registraci pokračovat. Děkujeme." },
+
+            "14. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal druhý doklad ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "Dobrý den, Váš druhý doklad byl zamítnut. Prosím dbejte na to, aby fotografie byly čitelné, bez odlesků a stínů, s viditelnými okraji a nejlépe pořízené na pevném povrchu. Prsty, předměty a metadata (například datum pořízení fotografie nebo model fotoaparátu) nesmí zakrývat žádnou část dokladu na fotografii. Děkujeme." },
+
+            "15. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal druhý doklad ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "TProsíme o nahrání jiného dokladu, například rodného listu, řidičského průkazu, cestovního pasu nebo průkazu pojištěnce. Ujistěte se, že fotografie dokladů jsou čitelné, bez odlesků a stínů, s viditelnými okraji, ideálně pořízené na pevném podkladu." },
+
+            "16. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal druhý doklad ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "Dobrý den, Váš druhý doklad pozbyl platnosti, prosíme o dodání nového vyhotovení platného dokladu. Děkujeme." },
+
+            "17. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal oba doklady ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "Dobrý den, Vaše doklady byly zamítnuty. Prosím dbejte na to, aby fotografie byly čitelné, bez odlesků a stínů, s viditelnými okraji a nejlépe pořízené na pevném povrchu. Prsty, předměty a metadata (například datum pořízení fotografie nebo model fotoaparátu) nesmí zakrývat žádnou část dokladu na fotografii. Děkujeme." },
+
+            "18. abc-def-ghi-jkl": { longNote: "", aml: "Klient nám zaslal svoje číslo bankovního účtu na e-mail, nyní bude probíhat ověření vlastníka bankovního účtu.", client: "" },
+
+            "19. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal hlavní doklad, nyní byl notifikován pro zaslání svého čísla bankovního účtu.", client: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz." },
+
+            "20. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal oba doklady ve špatné kvalitě, bude znovu notifikován o postupu focení.Klient úspěšně znovu dodal druhý doklad, nyní byl notifikován pro zaslání svého čísla bankovního účtu.", client: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz." },
+
+            "21. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (1x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil B. Ověření vlastníka bankovního účtu bude probíhat. Po zaslání jednokorunové platby, bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "" },
+
+            "22. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (1x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil B. Po znovudodání druhého dokladu bude probíhat ověření vlastníka bankovního účtu. Po zaslání jednokorunové platby, bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "Dobrý den, Váš druhý doklad byl zamítnut. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "23. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (1x), úroveň RF 4 (x). Zákazníkovi byl přiřazen rizikový profil B. Po znovudodání hlavního dokladu bude probíhat ověření vlastníka bankovního účtu. Po zaslání jednokorunové platby, bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "Dobrý den, Váš hlavní doklad byl zamítnut. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "24. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (1x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil B. Ověření vlastníka bankovního účtu zatím neproběhlo, neboť klient musí dodat číslo svého bankovního účtu, k čemuž bude notifikován. Po zaslání jednokorunové platby, bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "Dobrý den, Ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz." },
+
+            "25. abc-def-ghi-jkl": { longNote: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz.", aml: " Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (1x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil B. Po znovudodání druhého dokladu bude probíhat ověření vlastníka bankovního účtu. Ověření vlastníka bankovního účtu zatím neproběhlo, neboť klient musí dodat číslo svého bankovního účtu, k čemuž bude notifikován. Po zaslání jednokorunové platby, bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "Dobrý den, Váš druhý doklad byl zamítnut. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme.                                                                                                                                        " },
+
+            "26. abc-def-ghi-jkl": { longNote: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz.", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (1x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil B. Po znovudodání hlavního dokladu bude probíhat ověření vlastníka bankovního účtu. Ověření vlastníka bankovního účtu zatím neproběhlo, neboť klient musí dodat číslo svého bankovního účtu, k čemuž bude notifikován. Po zaslání jednokorunové platby, bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "Dobrý den, Váš hlavní doklad byl zamítnut. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "27. abc-def-ghi-jkl": { longNote: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz.", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (1x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil B. Po znovudodání obou dokladů bude probíhat ověření vlastníka bankovního účtu. Ověření vlastníka bankovního účtu zatím neproběhlo, neboť klient musí dodat číslo svého bankovního účtu, k čemuž bude notifikován. Po zaslání jednokorunové platby, bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "Dobrý den, Vaše doklady byly zamítnuty. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "28. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ prošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém nehlásí žádné výstrahy a kontrola na nežádoucí média byla negativní. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (1x), úroveň RF 4 (0x). Zákazníkovi byl přiřazen rizikový profil B. Po znovudodání obou dokladů bude probíhat ověření vlastníka bankovního účtu. Po zaslání jednokorunové platby, bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "Dobrý den, Vaše doklady byly zamítnuty. Dbejte prosím na to, aby snímky fotografie dokladů byly čitelné, bez odlesků a stínů, s viditelnými okraji, nejlépe pořízené na pevném podkladu. Děkujeme." },
+
+            "29. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal oba doklady, nyní bude probíhat ověření vlastníka bankovního účtu. Poté bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "" },
+
+            "30. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal hlavní doklad, nyní bude probíhat ověření vlastníka bankovního účtu. Poté bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "" },
+
+            "31. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal druhý doklad, nyní bude probíhat ověření vlastníka bankovního účtu. Poté bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "" },
+
+            "32. abc-def-ghi-jkl": { longNote: "", aml: " Klient znovu dodal hlavní doklad ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "Dobrý den, Váš hlavní doklad byl zamítnut. Prosím dbejte na to, aby fotografie byly čitelné, bez odlesků a stínů, s viditelnými okraji a nejlépe pořízené na pevném povrchu. Prsty, předměty a metadata (například datum pořízení fotografie nebo model fotoaparátu) nesmí zakrývat žádnou část dokladu na fotografii. Děkujeme." },
+
+            "33. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal druhý doklad ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "Dobrý den, Váš druhý doklad byl zamítnut. Prosím dbejte na to, aby fotografie byly čitelné, bez odlesků a stínů, s viditelnými okraji a nejlépe pořízené na pevném povrchu. Prsty, předměty a metadata (například datum pořízení fotografie nebo model fotoaparátu) nesmí zakrývat žádnou část dokladu na fotografii. Děkujeme." },
+
+            "34. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal oba doklady ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "Dobrý den, Vaše doklady byly zamítnuty. Prosím dbejte na to, aby fotografie byly čitelné, bez odlesků a stínů, s viditelnými okraji a nejlépe pořízené na pevném povrchu. Prsty, předměty a metadata (například datum pořízení fotografie nebo model fotoaparátu) nesmí zakrývat žádnou část dokladu na fotografii. Děkujeme." },
+
+            "35. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně zaslal e-mailem číslo svého bankovního účtu, nyní bude probíhat ověření vlastníka bankovního účtu. Poté bude aplikováno následující opatření: Ověření původu peněžních prostředků z důvěryhodného zdroje. Klient dodá doklad prokazující původ peněžních prostředků, na základě čehož bude možné dosáhnout pokračování obchodního vztahu se zákazníkem.", client: "" },
+
+            "36. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal hlavní doklad, nyní byl notifikován pro zaslání svého čísla bankovního účtu.", client: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz." },
+
+            "37. abc-def-ghi-jkl": { longNote: "", aml: "Klient úspěšně znovu dodal druhý doklad, nyní byl notifikován pro zaslání svého čísla bankovního účtu.", client: "Dobrý den, ve Vaší registraci bude možné pokračovat ihned po zaslání čísla Vašeho bankovního účtu z Vašeho e-mailu uvedeného v registračním formuláři na náš e-mail: info@rychlapenezenka.cz." },
+
+            "38. abc-def-ghi-jkl": { longNote: "", aml: "Klient znovu dodal druhý doklad ve špatné kvalitě, bude znovu notifikován o postupu focení.", client: "Prosíme o nahrání jiného dokladu, například rodného listu, řidičského průkazu, cestovního pasu nebo průkazu pojištěnce. Ujistěte se, že fotografie dokladů jsou čitelné, bez odlesků a stínů, s viditelnými okraji, ideálně pořízené na pevném podkladu." },
+
+            "39. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Dobrý den, Váš druhý doklad pozbyl platnosti, prosíme o dodání nového vyhotovení platného dokladu. Děkujeme." },
+
+            "40. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Systém zamítl Váš hlavní doklad, evidujeme již v systému nové číslo Vašeho občanského dokladu, u kterého je zapotřebí pořídit snímek, aby bylo možné v registraci pokračovat. Děkujeme." },
+
+            "41. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Vážený kliente, tento doklad od Vás již máme. Prosíme o dodání jiného dokladu prokazující původ Vašich peněžních prostředků, na základě čehož bude možné dosáhnout vytvoření obchodního vztahu. Děkujeme." },
+
+            "42. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Prosíme Vás o dodání dodatečného dokladu prokazující původ Vašich peněžních prostředků, na základě čehož bude možné dosáhnout vytvoření obchodního vztahu. Nahrát doklady můžete prostřednictvím aplikace nebo na e-mail info@rychlapenezenka.cz. Děkujeme." },
+
+            "43. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Zašlete nám bankovní výpis ve formátu PDF, který může být starý až 3 měsíce. Pokud výpis není k dispozici, zašlete nám potvrzení o vedení bankovního účtu, které si můžete vygenerovat ve svém internetovém bankovnictví. U tohoto potvrzení musí být shodná adresa s adresou Vašeho trvalého bydliště uvedenou v občanském průkazu. Pokud nevíte, kde tento výpis nebo potvrzení stáhnout, informujte se u své banky." },
+
+            "44. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Bohužel na Vámi dodaném dokladu je uvedená jiná adresa, čímž není stále prokázaná Vaše identita. Rozklikněte si v desktopové PC verzi Vašeho ČSOB bankovnictví v sekci „Přehled účtů“, která se Vám standartně zobrazí jako domovská obrazovka. Najeďte myší na název účtu. Po najetí myší na název účtu se objeví šipka dolů a „Detail řádku“, na který kliknete a rozevřou se další řádky a níže je několik tlačítek, z nichž klikněte na „Potvrzení o vedení“. Stažené potvrzení nám zašlete." },
+
+            "45. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Bohužel na Vámi dodaném dokladu je uvedená jiná adresa, čímž není stále prokázaná Vaše identita. Ve Vašem bankovnictví nalezněte potvrzení o vedení bankovního účtu, stáhněte si tento dokument a ten nám zašlete zde nebo na info@rychlapenezenka.cz." },
+
+            "46. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Vaše doklady jsme obdrželi. Dalším krokem registrace je doplnění čísla Vašeho bankovního účtu. Jedná se o číslo b.ú. (DOPLNIT), u nějž nebyl uveden kód banky. Zašlete nám číslo Vašeho účtu, včetně kódu banky na e-mail info@rychlapenezenka.cz. Děkujeme" },
+
+            "47. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Naše vnitřní předpisy nedovolují žadatelům o registraci provést ověřovací platbu skrze bankovní účet, jehož banka nesídlí v České republice. Zašlete nám číslo jiného b. účtu, z něhož budete posílat ověřovací platbu na email info@rychlapenezenka.cz." },
+
+            "48. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Byla nám zaslána registrační platba ze špatného účtu. Číslo bankovního účtu, který jste uvedl v rámci registrace je (DOPLNIT). Předchozí platba Vám byla vrácena na Váš účet (DOPLNIT). Platbu proveďte registrovaným účtem ve stanovené výši s variabilním symbolem. Děkujeme." },
+
+            "49. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Byly nám zaslány registrační platby ze špatného účtu. Číslo bankovního účtu, který jste uvedl v rámci registrace je (DOPLNIT). Předchozí platby Vám byly vráceny na Váš účet (DOPLNIT). Platbu proveďte registrovaným účtem ve stanovené výši s variabilním symbolem. Děkujeme." },
+
+"50. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Platba byla zaslána ze špatného účtu. Číslo b.ú. uvedené v registraci je (DOPLNIT). Předchozí 1 Kč platba byla vrácena na Váš účet (DOPLNIT). Evidentně se jedná o překlep, takže jsme číslo účtu opravili. Je však nutné provést platbu znovu." },
+
+"51. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Byla nám zaslána registrační platba ze špatného účtu, která byla vrácená. Číslo bankovního účtu, který jste uvedl v rámci registrace je (DOPLNIT). Peníze lze poslat pouze jen z Vašeho bankovního účtu, který jste uvedl při registraci, a který musí být v bance vedený na Vaše jméno. Děkujeme." },
+
+"52. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Klient využívá identitu jiné osoby a byl označen jako vysoce rizikový a byl mu nastaven rizikový profil C. Klient byl notifikován o ukončení obchodního vztahu." },
+
+"53. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Byla nám od Vás zaslána registrační platba ze správného účtu. Nicméně systémem předchozí korunová platba neprošla a 1 Kč platbu jsme Vám tedy vrátili. Poveďte prosím platbu znovu, další průchod systémem by měl být již zcela v pořádku. Děkujeme Vám." },
+
+"54. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Během Vaší platby nastala chyba. Číslo účtu i variabilní symbol byly správně zadány, ale částka nebyla ve výši 1 Kč, takže byla platba znovu vrácena. Je nutné opakovat registrační platbu ve správné výši, aby prošla systémem a spárovala se, čímž bude Vaše registrace dokončena." },
+
+"55. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Byla nám od Vás zaslána registrační platba ze správného účtu. Nicméně systémem i tato korunová platba neprošla a 1 Kč platbu jsme Vám tedy opět vrátili. Poveďte prosím platbu znovu, další průchod systémem by měl být již zcela v pořádku. Děkujeme Vám." },
+
+"56. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Právě Vám byla vrácena registrační platba ve výši 1 Kč, neuvedla jste žádný variabilní symbol platby a platbu nebylo možné přiřadit, registrace tak nebyla stále dokončena. Tým Rychlé Peněženky." },
+
+"57. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Právě Vám byla vrácena registrační platba ve výši 1 Kč, uvedla jste správně variabilní symbol, nicméně nesmíte posílat specifické symboly a konstantní symboly, které Vám zřejmě předvyplňuje Vaše banka u všech plateb, byť se jedná o doplnění pomocí nul." },
+
+"58. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Vážený zákazníku, posíláte nám jako ověřovací platbu částku, která je zcela odlišná od požadované částky. Zaslanou částku si lze poté samozřejmě vybrat. Její výše je upravená pouze pro potřebu ověření identity vlastníka bankovního účtu. Nejedná se o poplatek za používání peněženky či registraci v aplikaci, jak se někteří uživatelé mylně domnívají." },
+
+"59. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Během posouzení nároku na bonus za registraci do (DOPLNIT)  bylo zjištěno, že jste neprovedl/a registraci podle stanoveného postupu a že již máte u této společnosti účet. Nevadí, brzy vás budeme informovat o jiných bonusech u dalších sázkových společností." },
+
+"60. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Vážený uživateli, bonus (DOPLNIT) byl zamítnut, neboť nebyla viditelná na screenshotu Vaše přezdívka. Zkuste poslat znovu screenshot i s Vaší přezdívkou. Děkujeme." },
+
+"61. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Vážený uživateli, bonus (DOPLNIT) byl zamítnut, i když evidujeme Vaší registraci u sázkové kanceláře jako rozpracovanou. Je potřeba dodržet kroky v návodu, zejména splnění celého bodu 3 na straně 2, díky kterému se zobrazí datum provedení Vaší registrace." },
+
+"62. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Je nutné dodržet správný postup, který je uvedený v návodu k bonusu, který se nachází na straně 2. Vynechala jste v bodě 3. odstavce c) až g) a proto nemohl být Váš bonus schválen. Zkuste prosím vše znovu opakovat s dodržením návodu." },
+
+"63. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Je nutné dodržet postup v rámci souboru návod k bonusu do (DOPLNIT), který se nachází na straně 2. Vynechal(a) jste v bodě 3. odstavce d) až g) a proto nemohl být ani teď Váš bonus schválen. Zkuste vše prosím znovu, s dodržením návodu." },
+
+"64. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Podmínkou je dokončit registraci u Tipsportu viz. Strana 3 bod III.), což zatím nebylo provedeno, ale věříme že se Vám povede registraci úspěšně dokončit a Vy tak získáte od nás bonus ve výši 1000 Kč. Děkujeme." },
+
+"65. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Po znovuposlání screenshotu z aplikace, prokazující registraci dle uvedeného návodu budete moci nárokovat bonus, současný požadavek jsme byli nuceni zamítnout, aby bylo možné poslat nový nárok na bonus. Děkujeme." },
+
+"66. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Podmínky k 1000 Kč a 100 Kč bonusu jsou přístupné po aktivaci Vašeho účtu. Klienti, kteří nesplňují podmínky pro 1000 Kč bonus mohou získat jednoduše vstupní 100 Kč bonus. Pevně věříme, že Vás tento bonus také potěší." },
+
+"67. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Vážený uživateli přečtěte si návod v PDF k bonusu, screenshot z detailu bonusu se používá pouze u bonusu do Rychlé Peněženky. Postupujte tedy prosím dle návodu k danému bonusu. Děkujeme." },
+
+"68. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Váš bonus byl zamítnut. Dle návodu je nutné po přihlášení do aplikace pořídit screenshot v sekci bonusy přímo z detailu bonusu daného bonusu, respektive zmáčknout tlačítko získat, kde je pak v podsekci zobrazen počet zbývajících bonusů k nárokovanému bonusu." },
+
+"69. abc-def-ghi-jkl": { longNote: "", aml: "", client: "Podle návodu jste měl(a) kliknout na mamvsazeno.cz na banner Tipsportu a pak jste měl(a) zahájit proces registrace, jakýkoliv jiný způsob registrace není možné považovat za dodržení návodu, včetně dodržení posloupnosti kroků v něm uvedených." },
+
+"70. abc-def-ghi-jkl": { longNote: "", aml: "Kontrolovaný zákazník DOPLŇ neprošel prvním kolem kontrol obsahující PEPCheck, NIA ID, MVČR, Podvod na bazaru. Kontrolní systém hlásí výstrahy. Kontrola na nežádoucí média byla POZITIVNÍ. Bylo provedeno individuální posouzení rizik a zákazník prošel druhým kolem kontrol s následujícím výsledkem: Úroveň RF 2 (0x), úroveň RF 3 (0x), úroveň RF 4 (1x). Zákazníkovi byl přiřazen rizikový profil C. Obchodní vztah s tímto klientem není navázán.", client: "Na základě interní politiky naší společnosti jsme se rozhodli s Vámi obchodní vztah nenavázat. S přáním hezkého dne, tým Rychlé Peněženky." },
+
+        };
+
+
+        const templatesData = Object.keys(templates).filter(key => key !== "");
+
+        function togglePrefix() {
+            let textArea = document.getElementById("amlLog");
+            let prefix = "AML Log: ";
+            let button = document.querySelector(".toggle-prefix");
+
+            if (prefixEnabled) {
+                textArea.value = textArea.value.replace(prefix, "");
+                button.textContent = "AML Log: ✘";
+            } else {
+                textArea.value = prefix + textArea.value;
+                button.textContent = "AML Log: ✔";
+            }
+            prefixEnabled = !prefixEnabled;
+        }
+        
+        function toggleWarning() {
+            let template = document.getElementById("templateSearch").value;
+            let warning = document.getElementById("warningMessage");
+            warning.style.display = template && template !== "" ? "block" : "none";
+        }    
+        function applyTemplate() {
+            let selected = document.getElementById("templateSearch").value;
+            let longNote = document.getElementById("longNote");
+            let amlField = document.getElementById("amlLog");
+            let clientField = document.getElementById("clientNote");
+            let prefix = "AML Log: ";
+
+            if (templates[selected]) {
+                let amlContent = templates[selected].aml;
+                amlField.value = prefixEnabled ? prefix + amlContent : amlContent;
+                clientField.value = templates[selected].client;
+                longNote.value = templates[selected].longNote; // ✅ Přidáno: Vyplní Dlouhodobou poznámku!
+
+                toggleWarning(); // Zavolá funkci pro zobrazení/skrýtí varování
+                updateRFToggles(); // Přidáno: tlačítka +1/-1 se aktivují po výběru šablony
+                formatAMLText(); // ✅ Hned obarvíme RF faktory!
+                updateSubmitButton(); // Přidáno: tlačítko se aktualizuje po výběru šablony
+            }
+        }
+
+        function resetField(fieldId) {
+            let selected = document.getElementById("templateSearch").value;
+            let field = document.getElementById(fieldId);
+            let prefix = "AML Log: ";
+
+            if (templates[selected]) {
+                if (fieldId === "amlLog") {
+                    field.value = prefixEnabled ? prefix + templates[selected].aml : templates[selected].aml;
+                    formatAMLText(); // ✅ Znovu obarvíme RF faktory po resetu!
+                } else {
+                    field.value = templates[selected].client;
+                }
+            } else {
+                field.value = "";
+            }
+        }
+
+        function filterTemplates() {
+            let input = document.getElementById("templateSearch").value.toLowerCase();
+            let list = document.getElementById("templateList");
+            let keywords = input.split(" ");
+
+            list.innerHTML = "";
+
+            templatesData.forEach(template => {
+                if (keywords.some(keyword => template.toLowerCase().includes(keyword))) {
+                    let item = document.createElement("li");
+                    item.textContent = template;
+                    item.onclick = function(event) {
+                        event.stopPropagation(); // ❗ Zabrání zavření popupu!
+                        document.getElementById("templateSearch").value = template;
+                        list.innerHTML = ""; // Skryje seznam po výběru
+                        applyTemplate(); // Zavolá funkci pro aplikaci šablony
+                    };
+                    list.appendChild(item);
+                }
+            });
+
+            list.style.display = list.children.length ? "block" : "none";
+        }
+
+        document.getElementById("templateSearch").addEventListener("focus", function() {
+            filterTemplates();
+        });
+
+        document.addEventListener("click", function(event) {
+            if (!document.getElementById("templateSearch").contains(event.target) &&
+                !document.getElementById("templateList").contains(event.target)) {
+                document.getElementById("templateList").style.display = "none";
+            }
+        });
+
+        function updateSubmitButton() {
+            let longNote = document.getElementById("longNote").value.trim();
+            let amlText = document.getElementById("amlLog").value.trim();
+            let clientText = document.getElementById("clientNote").value.trim();
+            let button = document.getElementById("submitButton");
+            let errorMessage = document.getElementById("errorMessage");
+
+            let hasLongNote = longNote !== "";
+            let hasAMLContent = amlText !== "AML Log:" && amlText !== "";
+            let hasClientContent = clientText !== "";
+
+            let rf2Regex = /RF 2 \((\d+)x?\)/;
+            let rf3Regex = /RF 3 \((\d+)x?\)/;
+            let rf4Regex = /RF 4 \((\d+)x?\)/;
+            
+            let containsProfileA = amlText.includes("Zákazníkovi byl přiřazen rizikový profil A");
+            let containsProfileB = amlText.includes("Zákazníkovi byl přiřazen rizikový profil B");
+            let containsProfileC = amlText.includes("Zákazníkovi byl přiřazen rizikový profil C"); // ✅ Nový profil C
+
+            let rf2Match = amlText.match(rf2Regex);
+            let rf3Match = amlText.match(rf3Regex);
+            let rf4Match = amlText.match(rf4Regex);
+
+            let rf2Value = rf2Match ? parseInt(rf2Match[1]) : 0;
+            let rf3Value = rf3Match ? parseInt(rf3Match[1]) : 0;
+            let rf4Value = rf4Match ? parseInt(rf4Match[1]) : 0;
+
+            // ✅ **PRIORITNÍ KONTROLA: Jednosměrná jízdenka do pekla** (Profil A + RF 3 > 0 + RF 4 > 0)
+            if (containsProfileA && rf3Value > 0 && rf4Value > 0) {
+                button.textContent = "Volat pro výpověď";
+                button.style.backgroundColor = "black"; 
+                button.style.color = "white"; 
+                button.disabled = false;
+                errorMessage.innerHTML = "✅ <span style='color:green; font-weight:bold;'>Za nastavení RF 3 a 4 více než 0 u profilu A<br>jste právě obdržel jednosměrnou jízdenku do Azkabanu!</span>";
+                errorMessage.style.display = "block";
+                return; // 🚨 STOP! NEPOVOLÍME DALŠÍ CHYBY, PEKLO MÁ PŘEDNOST! 🚨
+            }
+
+
+            // ❌ RF 2 NESMÍ být 0
+            if (rf2Match && rf2Value === 0) {
+                button.textContent = "Nelze odeslat – RF 2 nesmí být 0!";
+                button.style.backgroundColor = "gray";
+                button.disabled = true;
+                errorMessage.textContent = "❌ RF 2 nemůže být 0!";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            // ✅ **KONTROLA: RF 2 nesmí být pod 2, pokud je věk pod 18 let**
+            let birthDateMatch = longNote.match(/\b\d{2}\.\d{2}\.\d{4}\b/); // Hledá datum ve formátu DD.MM.YYYY
+            if (birthDateMatch) {
+                let birthDateParts = birthDateMatch[0].split(".");
+                let birthDate = new Date(birthDateParts[2], birthDateParts[1] - 1, birthDateParts[0]); // Převod na JS Date
+                let today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                let monthDiff = today.getMonth() - birthDate.getMonth();
+                let dayDiff = today.getDate() - birthDate.getDate();
+
+                // Pokud ještě neoslavil narozeniny v tomto roce, odečteme jeden rok
+                if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+                    age--;
+                }
+
+                if (age < 18 && rf2Value < 2) {
+                    button.textContent = "Nelze odeslat – RF 2 nesmí být pod 2!";
+                    button.style.backgroundColor = "gray";
+                    button.disabled = true;
+                    errorMessage.textContent = "❌ RF 2 se nemůže = 1, protože věk klienta je pod 18 let!";
+                    errorMessage.style.display = "block";
+                    return;
+                }
+            }
+            // ❌ RF 3 musí být při Profilu B (ALE NE, pokud je přítomen Profil C)
+            if (rf3Value > 0 && !containsProfileB && !containsProfileC) { 
+                button.textContent = "Nelze odeslat – Rizikový profil nekoresponduje!";
+                button.style.backgroundColor = "gray";
+                button.disabled = true;
+                errorMessage.textContent = "❌ Rizikový profil B chybí při RF 3 (1x nebo více)!";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            // ❌ Profil B nesmí být při RF 3 = 0
+            if (rf3Value === 0 && containsProfileB) {
+                button.textContent = "Nelze odeslat – Rizikový profil nekoresponduje!";
+                button.style.backgroundColor = "gray";
+                button.disabled = true;
+                errorMessage.textContent = "❌ Profil B je přítomen, ale RF 3 = 0!";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            // ❌ Profil A nesmí být při RF 3 > 0
+            if (rf3Value > 0 && containsProfileA) {
+                button.textContent = "Nelze odeslat – Rizikový profil nekoresponduje!";
+                button.style.backgroundColor = "gray";
+                button.disabled = true;
+                errorMessage.textContent = "❌ Profil A nesmí být přítomen při RF 3 větším než 0!";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            // ❌ RF 4 NESMÍ být 0, pokud je přítomen Rizikový profil C
+            if (containsProfileC && rf4Value === 0) {
+                button.textContent = "Nelze odeslat – RF 4 nesmí být 0!";
+                button.style.backgroundColor = "gray";
+                button.disabled = true;
+                errorMessage.textContent = "❌ Rizikový profil C vyžaduje RF 4 větší než 0!";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            // ❌ RF 4 NESMÍ být větší než 0, pokud je přítomen Profil A NEBO B
+            if ((containsProfileA || containsProfileB) && rf4Value > 0) {
+                button.textContent = "Nelze odeslat – RF 4 nesmí být větší než 0!";
+                button.style.backgroundColor = "gray";
+                button.disabled = true;
+                errorMessage.textContent = "❌ Rizikový profil A nebo B nesmí mít RF 4 větší než 0!";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            // ✅ **Jednosměrná jízdenka do pekla** (Profil A + RF 3 > 0 + RF 4 > 0)
+            if (containsProfileA && rf3Value > 0 && rf4Value > 0) {
+                button.textContent = "Volat pro výpověď";
+                button.style.backgroundColor = "black"; 
+                button.style.color = "white"; 
+                button.disabled = false;
+                errorMessage.innerHTML = "✅ <span style='color:green; font-weight:bold;'>Jednosměrná jízdenka do pekla!</span>";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            // ✅ Všechny kontroly prošly, chybová zpráva zmizí
+            errorMessage.style.display = "none";
+
+            // ✅ Dynamická změna tlačítka podle vyplněných polí
+            if (hasLongNote && hasAMLContent && hasClientContent) {
+                button.textContent = "Vytvořit všechny tři poznámky";
+                button.style.backgroundColor = "red";
+            } else if (hasLongNote && hasAMLContent) {
+                button.textContent = "Vytvořit dlouhodobou + AML";
+                button.style.backgroundColor = "pink";
+            } else if (hasLongNote && hasClientContent) {
+                button.textContent = "Vytvořit dlouhodobou + klienta";
+                button.style.backgroundColor = "purple";
+            } else if (hasAMLContent && hasClientContent) {
+                button.textContent = "Vytvořit poznámku pro admina a klienta";
+                button.style.backgroundColor = "brown";
+            } else if (hasLongNote) {
+                button.textContent = "Vytvořit dlouhodobou poznámku";
+                button.style.backgroundColor = "orange";
+            } else if (hasAMLContent) {
+                button.textContent = "Vytvořit poznámku pro administrátora";
+                button.style.backgroundColor = "green";
+            } else if (hasClientContent) {
+                button.textContent = "Vytvořit poznámku pro klienta";
+                button.style.backgroundColor = "blue";
+            } else {
+                button.textContent = "Není co odeslat";
+                button.style.backgroundColor = "gray";
+                button.disabled = true;
+            }
+
+            button.disabled = false; // Povolit tlačítko, pokud není blokované předchozími kontrolami
+        }
+        
+        // Spustí aktualizaci tlačítka hned při načtení stránky
+        document.addEventListener("DOMContentLoaded", function() {
+            updateSubmitButton();
+            updateRFToggles(); // Přidáno, aby se tlačítka aktivovala po načtení
+            }
+        );
+
+        function changeRF(rfType, change) {
+            let amlField = document.getElementById("amlLog");
+            let amlText = amlField.value;
+
+            // RegEx pro hledání RF X (číslo)x
+            let regex = new RegExp(`(RF ${rfType} \\()(\\d+)x(\\))`);
+            let match = amlText.match(regex);
+            if (match) {
+                let currentNumber = parseInt(match[2]); // Extrahuje aktuální číslo
+                let newNumber = Math.max(currentNumber + change, 0); // Nemůže jít pod 0
+
+                // Nahradí starou hodnotu novou
+                amlField.value = amlText.replace(regex, `RF ${rfType} (${newNumber}x)`);
+            } else {
+                // Pokud RF faktor není přítomen, přidáme ho
+                amlField.value += ` RF ${rfType} (${Math.max(change, 0)}x)`;
+            }
+                updateRFToggles(); // Po úpravě RF faktorů zkontrolujeme tlačítka
+                updateSubmitButton(); // Ujistíme se, že tlačítko Odeslat se správně přizpůsobí
+                formatAMLText(); // Přidáno: Aktualizace barevného formátu
+            
+        }
+
+        function updateRFToggles() {
+            let amlField = document.getElementById("amlLog");
+            let amlText = amlField.value;
+
+            // Vytvoříme kopii textu BEZ kuliček pro správnou kontrolu
+            let cleanText = amlText.replace(/🔵|🟡|🔴/g, "");
+
+            [2, 3, 4].forEach(rfType => {
+                let regex = new RegExp(`RF ${rfType} \\((\\d+)x\\)`);
+                let match = cleanText.match(regex);
+                let rfButtons = document.querySelectorAll(`.rf-btn[data-rf='${rfType}']`);
+
+                if (match) {
+                    rfButtons.forEach(button => {
+                        button.disabled = false; // Povolit tlačítka, pokud RF faktor existuje
+                    });
+                } else {
+                    rfButtons.forEach(button => {
+                        button.disabled = true; // Pokud RF faktor neexistuje, deaktivovat tlačítka
+                    });
+                }
+            });
+        }
+        // 🛠 Funkce se teď bude volat okamžitě po změně AML Logu
+        document.getElementById("amlLog").addEventListener("input", updateRFToggles)
+
+        function formatAMLText() {
+            let amlField = document.getElementById("amlLog");
+            let amlText = amlField.value;
+
+            // Nejprve odstraníme staré symboly, abychom zabránili jejich zdvojení
+            amlText = amlText.replace(/🔵\s*/g, "").replace(/🟡\s*/g, "").replace(/🔴\s*/g, "");
+
+            // Přidáme zpět symboly správným způsobem
+            amlText = amlText.replace(/RF 2 \((\d+)x?\)/g, '🔵RF 2 ($1x)');
+            amlText = amlText.replace(/RF 3 \((\d+)x?\)/g, '🟡RF 3 ($1x)');
+            amlText = amlText.replace(/RF 4 \((\d+)x?\)/g, '🔴RF 4 ($1x)');
+
+            amlField.value = amlText; // Přepíše text v poli bez nechtěných mezer
+
+            updateSubmitButton(); // Přidáno: Kontrola se spustí ihned po úpravě textu
+        }
+
+        document.getElementById("popupOverlay").addEventListener("click", function(event) {
+            let popup = document.querySelector(".popup");
+            let templateList = document.getElementById("templateList"); // Seznam šablon
+
+            // Pokud kliknu mimo popup a NE na seznam šablon, zavřu popup
+            if (!popup.contains(event.target) && !templateList.contains(event.target)) { 
+                closePopup();
+            }
+        });
+
+        // Funkce pro zavření popupu (pouze skryje, nevymaže obsah)
+        function closePopup() {
+            document.getElementById("popupOverlay").style.display = "none";
+        }
+
+        // Funkce pro otevření popupu (ponechá obsah beze změny)
+        function openPopup() {
+            document.getElementById("popupOverlay").style.display = "flex";
+        }
+
+        
+    </script>
+</body>
+</html>
