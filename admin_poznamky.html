@@ -349,13 +349,13 @@
 
             <!-- Poznámka pro klienta -->
             <div class="field" style="grid-column:1 / -1;">
-                <label for="clientNote">Poznámka pro klienta</label>
+                <label for="clientNote">Poznámka pro uživatele</label>
                 <textarea id="clientNote" class="text-area" oninput="updateSubmitButton();"></textarea>
 
                 <div class="controls">
                 <button class="iconbtn" type="button" onclick="resetField('clientNote')">↺</button>
                 <!-- Klient -->
-                <button class="btn blue" type="button" onclick="submitClientNote()">Vytvořit poznámku pro klienta</button>
+                <button class="btn blue" type="button" onclick="submitClientNote()">Vytvořit poznámku pro uživatele</button>
                 </div>
             </div>
 
@@ -828,10 +828,10 @@
                 button.textContent = "Vytvořit dlouhodobou + AML";
                 button.style.backgroundColor = "pink";
             } else if (hasLongNote && hasClientContent) {
-                button.textContent = "Vytvořit dlouhodobou + klienta";
+                button.textContent = "Vytvořit dlouhodobou + uživatele";
                 button.style.backgroundColor = "purple";
             } else if (hasAMLContent && hasClientContent) {
-                button.textContent = "Vytvořit poznámku pro admina a klienta";
+                button.textContent = "Vytvořit poznámku pro admina a uživatele";
                 button.style.backgroundColor = "brown";
             } else if (hasLongNote) {
                 button.textContent = "Vytvořit dlouhodobou poznámku";
@@ -840,7 +840,7 @@
                 button.textContent = "Vytvořit poznámku pro administrátora";
                 button.style.backgroundColor = "green";
             } else if (hasClientContent) {
-                button.textContent = "Vytvořit poznámku pro klienta";
+                button.textContent = "Vytvořit poznámku pro uživatele";
                 button.style.backgroundColor = "blue";
             } else {
                 button.textContent = "Není co odeslat";
