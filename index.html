@@ -1617,6 +1617,28 @@
       tbody.prepend(tr);
     }
 
+    // Hamburger toggle (levé menu)
+    (function initSidebarToggle(){
+      const btn = document.getElementById("hamburger");
+      if(!btn) return;
+
+      // načíst uložený stav
+      try{
+        const saved = localStorage.getItem("rp_sidebar_collapsed");
+        if(saved === "1") document.body.classList.add("sidebar-collapsed");
+      }catch(_){}
+
+      btn.addEventListener("click", () => {
+        document.body.classList.toggle("sidebar-collapsed");
+        try{
+          localStorage.setItem(
+            "rp_sidebar_collapsed",
+            document.body.classList.contains("sidebar-collapsed") ? "1" : "0"
+          );
+        }catch(_){}
+      });
+    })();
+
     // Přijímač z iframe (admin_poznamky.html)
     window.addEventListener("message", (event) => {
       const msg = event.data;
