@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Statistika a uzávěrky</title>
+
+  <style>
+    :root{
+      --blue:#3d78d8;
+      --blue-dark:#2f66c4;
+      --sidebar-w:260px;
+      --sidebar-w-collapsed:66px;
+      --bg:#f2f4f7;
+      --card:#ffffff;
+      --line:#e6e9ef;
+      --muted:#6b7280;
+      --link:#1e66ff;
+      --btn-blue:#2f66c4;
+      --btn-red:#ef4444;
+      --btn-purple:#7b1fa2;
+      --shadow:0 1px 2px rgba(0,0,0,.08);
+      --menu-gap: 6px;
+
+      --user-orange: #ff8a2a;
+      --user-orange-hover: #ff9b4d;
+      --user-orange-active: #f07c1f;
+
+      --settings-sep-color: #000;
+      --settings-sep-opacity: .2;
+      --settings-sep-thickness: 2px;
+      --settings-sep-margin: 30px;
+
+      --kpi-badge-bg: #b3b3b3;
+      --kpi-badge-color: #fff;
+      --kpi-badge-hover-bg: #b3b3b3;
+      --kpi-badge-hover-scale: 1.18;
+      --kpi-badge-hover-brightness: 1.00;
+      --kpi-badge-shadow: 0 1px 0 rgba(0,0,0,.10);
+
+      --kpi-aml-orange: #ff8a2a;
+
+      --kpi-label-line: 1.15;
+      --kpi-label-lines: 3;
+      --kpi-label-height: calc(var(--kpi-label-lines) * var(--kpi-label-line) * 1em);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color:#111827;
+    }
+
+    /* Top bar */
+    .topbar{
+      position:fixed;
+      top:0; left:0; right:0;
+      height:56px;
+      background: var(--blue);
+      display:flex;
+      align-items:center;
+      padding:0 16px;
+      z-index:50;
+      box-shadow: var(--shadow);
+    }
+    .topbar .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#fff;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .deploy-pill{
+      display:inline-flex;
+      align-items:stretch;
+      border-radius:4px;
+      overflow:hidden;
+      box-shadow: 0 1px 0 rgba(0,0,0,.12);
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
+    .deploy-pill .left{
+      background:#2f343b;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+    }
+    .deploy-pill .left .fb{
+      width:16px; height:16px;
+      border-radius:3px;
+      background:#111;
+      display:grid;
+      place-items:center;
+      font-size:12px;
+      line-height:1;
+    }
+    .deploy-pill .right{
+      background:#11a372;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      padding:6px 10px;
+      font-weight:900;
+    }
+    .topbar .spacer{ flex:1; }
+
+    .topbar .userbtn{
+      background: var(--user-orange);
+      color:#fff;
+      border:none;
+      border-radius:6px;
+      padding:7px 12px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      box-shadow: 0 1px 0 rgba(0,0,0,.18);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .topbar .userbtn:hover{ background: var(--user-orange-hover); }
+    .topbar .userbtn:active{ background: var(--user-orange-active); transform: translateY(1px); }
+
+    /* Sidebar */
+    .sidebar{
+      position:fixed;
+      top:56px; left:0; bottom:0;
+      width:var(--sidebar-w);
+      background:#fff;
+      border-right:1px solid var(--line);
+      padding:10px 10px 14px;
+      overflow:auto;
+      transition: width .18s ease;
+    }
+    body.sidebar-collapsed .sidebar{ width: var(--sidebar-w-collapsed); }
+
+    .side-top{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 6px 10px;
+      border-bottom:1px solid #f0f2f6;
+      margin-bottom:10px;
+    }
+    .hamburger{
+      width:34px; height:28px;
+      border:1px solid #d7dce6;
+      border-radius:4px;
+      background:#fff;
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+    }
+    .hamburger:hover{ background:#f8fafc; }
+    .hamburger .bars{
+      width:16px; height:12px; position:relative;
+    }
+    .hamburger .bars::before,
+    .hamburger .bars::after,
+    .hamburger .bars span{
+      content:"";
+      position:absolute; left:0; right:0;
+      height:2px; background:#6b7280; border-radius:2px;
+    }
+    .hamburger .bars::before{ top:0; }
+    .hamburger .bars span{ top:5px; }
+    .hamburger .bars::after{ bottom:0; }
+
+    .side-title{
+      font-size:12px;
+      color:#6b7280;
+      font-weight:800;
+      letter-spacing:.02em;
+      white-space:nowrap;
+    }
+    body.sidebar-collapsed .side-title{ display:none; }
+
+    .menu a{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:6px;
+      text-decoration:none;
+      color:#374151;
+      font-size:13px;
+      cursor:pointer;
+      margin-bottom: var(--menu-gap);
+      transition: background .12s ease, color .12s ease;
+    }
+    .menu a:hover{
+      background:#fff7ed;
+      color:#b45309;
+    }
+    .menu a:hover .txt{
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .menu a:hover .mi{ color:#f59e0b; }
+
+    .menu a.active{
+      background:#ffedd5;
+      color:#9a3412;
+    }
+    .menu a.active .mi{ color:#f59e0b; }
+    .menu a.active .txt{
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .mi{ width:18px; height:18px; color:#9ca3af; flex:0 0 auto; }
+    .mi svg{ width:18px; height:18px; display:block; fill: currentColor; }
+    .menu .txt{ white-space:nowrap; }
+    body.sidebar-collapsed .menu .txt{ display:none; }
+
+    .menu-parent{
+      position: relative;
+      margin-top: calc(var(--settings-sep-margin) + 6px);
+    }
+    .menu-parent::before{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      top: calc(-1 * var(--settings-sep-margin));
+      height: var(--settings-sep-thickness);
+      background: var(--settings-sep-color);
+      opacity: var(--settings-sep-opacity);
+    }
+
+    /* Main */
+    .main{
+      margin-left:var(--sidebar-w);
+      padding:18px 16px;
+      transition: margin-left .18s ease;
+    }
+    body.sidebar-collapsed .main{ margin-left: var(--sidebar-w-collapsed); }
+
+    .main-inner{
+      padding-top: 18px;
+      margin-top:56px;
+      max-width:3440px;
+    }
+
+    /* Card */
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:8px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card-header{
+      background: var(--blue);
+      color:#fff;
+      padding:12px 12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .card-icon{
+      width:24px; height:24px;
+      border-radius:4px;
+      background: rgba(255,255,255,.18);
+      display:grid;
+      place-items:center;
+      user-select:none;
+    }
+    .card-icon svg{ width:18px; height:18px; fill:#fff; display:block; }
+    .card-header h2{
+      margin:0;
+      font-size:18px;
+      font-weight:600;
+    }
+    .card-header .hdr-spacer{ flex:1; }
+
+    .card-body{ padding:14px 14px 10px; }
+
+    /* ====== Střed – Statistika a uzávěrky (podle fotky) ====== */
+    .stats-body{ padding:14px; }
+    .stats-panel{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:8px;
+      box-shadow: var(--shadow);
+      padding: 22px 18px 18px;
+    }
+
+    /* zarovnání “sloupce” doprostřed jako na screenshotu */
+    .stats-wrap{
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .stats-stack{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-link{
+      width:100%;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border-radius:4px;
+      height:30px;
+      padding: 0 14px;
+      text-decoration:none;
+      color:#fff;
+      font-weight:600;
+      font-size:12px;
+      box-shadow: 0 1px 0 rgba(0,0,0,.12);
+      user-select:none;
+      transition: filter .12s ease, transform .12s ease, box-shadow .12s ease;
+    }
+
+    .stat-link .ico{
+      width:16px; height:16px;
+      display:inline-grid;
+      place-items:center;
+      opacity:.95;
+      flex:0 0 auto;
+    }
+    .stat-link .ico svg{ 
+      width:16px; height:16px; fill:#fff; display:block; 
+    }
+
+    /* barvy přesně “RP styl” */
+    .stat-link.blue{ background:#2f66c4; }
+    .stat-link.gray{ background:#656d76; }
+
+    /* hover “zesvětlení” jako button */
+    .stat-link:hover{
+      filter: brightness(1.08);
+      box-shadow: 0 2px 0 rgba(0,0,0,.12);
+    }
+    .stat-link:active{ transform: translateY(1px); }
+
+    .stats-jobs{
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .job-row{
+      display:grid;
+      grid-template-columns: 320px 220px 1fr;
+      gap: 18px;
+      align-items:start;
+    }
+
+    .job-left .job-sub{
+      font-size:11px;
+      color:#111827;
+      margin-top:6px;
+      text-align:center;
+    }
+
+    .job-left .job-sub em{
+      font-style: normal;
+      opacity:.9;
+    }
+
+    .job-meta{
+      font-size:11px;
+      color:#111827;
+      line-height:1.25;
+      padding-top:2px;
+    }
+    .job-meta .lbl{
+      color:#111827;
+      font-weight:600;
+      margin-bottom:2px;
+    }
+    .job-meta .val{
+      color:#111827;
+      opacity:.9;
+      white-space:nowrap;
+    }
+
+    .job-right{
+      font-size:11px;
+      color:#111827;
+      line-height:1.35;
+      padding-top:2px;
+    }
+    .job-right .muted{
+      color:#111827;
+      opacity:.9;
+    }
+
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:18px;
+      padding: 0 8px;
+      border-radius:3px;
+      background:#16a34a;
+      color:#fff;
+      font-weight:700;
+      font-size:10px;
+      box-shadow: 0 1px 0 rgba(0,0,0,.12);
+      margin-top:6px;
+      user-select:none;
+      text-decoration:none;
+    }
+
+    /* aby to na malých šířkách nespadlo ošklivě */
+    @media (max-width: 980px){
+      .job-row{
+        grid-template-columns: 1fr;
+      }
+      .job-left .job-sub{ text-align:left; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <span style="font-size:22px;">RP</span>
+
+      <div class="deploy-pill" title="rychlapenezenka.cz">
+        <div class="left">
+          <span class="fb">f</span>
+          <span>rychlapenezenka.cz</span>
+        </div>
+        <div class="right">deployed (N/A) 5 days ago</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="userbtn">● Patrik Denemark ▾</button>
+  </div>
+
+  <aside class="sidebar">
+    <div class="side-top">
+      <button class="hamburger" id="hamburger" title="Menu">
+        <div class="bars"><span></span></div>
+      </button>
+      <div class="side-title">Menu</div>
+    </div>
+
+    <div class="menu">
+      <a href="prehled_stavu.html" data-nav="overview">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10z"/></svg></span>
+        <span class="txt">Přehled stavu</span>
+      </a>
+
+      <a href="zakaznicke_ucty.html" data-nav="accounts">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3ZM8 11c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.14.4-2.1 1.05-2.9C10.2 13.4 9.1 13 8 13Zm8 0c-1.1 0-2.2.4-3.05 1.1.65.8 1.05 1.76 1.05 2.9v2h10v-2c0-2.66-5.33-4-8-4Z"/></svg></span>
+        <span class="txt">Zákaznické účty</span>
+      </a>
+
+      <a href="vsechny_transakce.html" data-nav="tx">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 4h18v4H3V4Zm0 6h18v10H3V10Zm4 3v2h6v-2H7Z"/></svg></span>
+        <span class="txt">Všechny transakce</span>
+      </a>
+
+      <a href="/poplatky" data-nav="fees">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Zm0 11h7c-.53 3.79-3.28 7.2-7 8.48V12H5V6.3l7-3.11V12Z"/></svg></span>
+        <span class="txt">Všechny poplatky</span>
+      </a>
+
+      <a href="prehled_karet.html" data-nav="cards">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2Zm0 10H4V8h16v8Zm-2-6H6v2h12v-2Z"/></svg></span>
+        <span class="txt">Přehled karet</span>
+      </a>
+
+      <a href="#" data-nav="notif">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2Zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2Z"/></svg></span>
+        <span class="txt">Notifikace</span>
+      </a>
+
+      <a href="/bonusy" data-nav="bonus">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 2c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4Zm-7 10v2h14v-2H5Z"/></svg></span>
+        <span class="txt">Bonusy a srážky</span>
+      </a>
+
+      <a href="/odstavky" data-nav="outages">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 14H5V8h14v10Zm-2-8H7v2h10v-2Z"/></svg></span>
+        <span class="txt">Provozní odstávky</span>
+      </a>
+
+      <a href="/statistiky" data-nav="stats">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M4 4a1 1 0 0 1 1 1v14h15a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm3.2 11.6 3.6-3.6 2.7 2.7 5.3-6.4a1 1 0 1 1 1.5 1.3l-6 7.2a1 1 0 0 1-1.5.1L10.8 14l-2.1 2.1a1 1 0 1 1-1.4-1.4Z"/></svg></span>
+        <span class="txt">Statistiky a uzávěrky</span>
+      </a>
+
+      <a href="/logy" data-nav="logs">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 17h18v2H3v-2Zm0-5h18v2H3v-2Zm0-5h18v2H3V7Z"/></svg></span>
+        <span class="txt">Logy</span>
+      </a>
+
+      <a href="/nastaveni" class="menu-parent" data-nav="settings">
+        <span class="mi">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm10 4a8.1 8.1 0 0 0-.14-1.5l2.02-1.57-2-3.46-2.45 1a8.2 8.2 0 0 0-2.6-1.5l-.37-2.6H9.54l-.37 2.6a8.2 8.2 0 0 0-2.6 1.5l-2.45-1-2 3.46L2.14 10.5A8.1 8.1 0 0 0 2 12c0 .5.05 1 .14 1.5l-2.02 1.57 2 3.46 2.45-1a8.2 8.2 0 0 0 2.6 1.5l.37 2.6h4.92l.37-2.6a8.2 8.2 0 0 0 2.6-1.5l2.45 1 2-3.46-2.02-1.57c.09-.5.14-1 .14-1.5Z"/>
+          </svg>
+        </span>
+        <span class="txt">Nastavení</span>
+      </a>
+
+      <a href="/sledovani" data-nav="work">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M3 13h2v8H3v-8Zm4-6h2v14H7V7Zm4 4h2v10h-2V11Zm4-8h2v18h-2V3Zm4 10h2v8h-2v-8Z"/></svg></span>
+        <span class="txt">Sledování činnosti práce</span>
+      </a>
+
+      <a href="/emaily" data-nav="emails">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/></svg></span>
+        <span class="txt">Odesílání e-mailů</span>
+      </a>
+
+      <a href="/status" data-nav="status">
+        <span class="mi"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 11H7v-2h6V5h2v8Z"/></svg></span>
+        <span class="txt">Status RP</span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="main-inner">
+      <section class="card">
+        <div class="card-header">
+          <div class="card-icon" aria-hidden="true" title="Statistika a uzávěrky">
+            <svg viewBox="0 0 24 24">
+               <path d="M4 4a1 1 0 0 1 1 1v14h15a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm3.2 11.6 3.6-3.6 2.7 2.7 5.3-6.4a1 1 0 1 1 1.5 1.3l-6 7.2a1 1 0 0 1-1.5.1L10.8 14l-2.1 2.1a1 1 0 1 1-1.4-1.4Z"/>
+            </svg>
+          </div>
+
+          <h2>Statistika a uzávěrky</h2>
+          <div class="hdr-spacer"></div>
+        </div>
+
+        <div class="card-body stats-body">
+          <div class="stats-panel">
+            <div class="stats-wrap">
+
+              <!-- horní “bar” tlačítka -->
+              <div class="stats-stack">
+                <a class="stat-link blue" href="#">
+                  <span class="ico">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 4a1 1 0 0 1 1 1v14h15a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm3.2 11.6 3.6-3.6 2.7 2.7 5.3-6.4a1 1 0 1 1 1.5 1.3l-6 7.2a1 1 0 0 1-1.5.1L10.8 14l-2.1 2.1a1 1 0 1 1-1.4-1.4Z"/>
+                    </svg>
+                  </span>
+                  Účetní uzávěrky
+                </a>
+
+                <a class="stat-link gray" href="#">
+                  <span class="ico">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 4a1 1 0 0 1 1 1v14h15a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm3.2 11.6 3.6-3.6 2.7 2.7 5.3-6.4a1 1 0 1 1 1.5 1.3l-6 7.2a1 1 0 0 1-1.5.1L10.8 14l-2.1 2.1a1 1 0 1 1-1.4-1.4Z"/>
+                    </svg>
+                  </span>
+                  Statistiky pro VISU
+                </a>
+
+                <a class="stat-link gray" href="#">
+                  <span class="ico">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 4a1 1 0 0 1 1 1v14h15a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm3.2 11.6 3.6-3.6 2.7 2.7 5.3-6.4a1 1 0 1 1 1.5 1.3l-6 7.2a1 1 0 0 1-1.5.1L10.8 14l-2.1 2.1a1 1 0 1 1-1.4-1.4Z"/>
+                    </svg>
+                  </span>
+                  SMS Statistiky
+                </a>
+              </div>
+
+              <!-- “job” řádky (vypořádání) -->
+              <div class="stats-jobs">
+
+                <div class="job-row">
+                  <div class="job-left">
+                    <a class="stat-link gray" href="#">
+                      <span class="ico">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M12 3c-4.7 0-8 1.8-8 4s3.3 4 8 4 8-1.8 8-4-3.3-4-8-4Zm0 2c3.7 0 6 .9 6 2s-2.3 2-6 2-6-.9-6-2 2.3-2 6-2Zm-8 6.2V15c0 2.2 3.3 4 8 4s8-1.8 8-4v-3.8c-1.6 1.4-4.6 2.3-8 2.3s-6.4-.9-8-2.3Zm0 6V19c0 2.2 3.3 4 8 4s8-1.8 8-4v-1.8c-1.6 1.4-4.6 2.3-8 2.3s-6.4-.9-8-2.3Z"/>
+                        </svg>
+                      </span>
+                      Vypořádání výnosů
+                    </a>
+                    <div class="job-sub"><em>(denní vypořádání poplatků klientů a obchodníků)</em></div>
+                  </div>
+
+                  <div class="job-meta">
+                    <div class="lbl">Naposledy provedeno</div>
+                    <div class="val">01.12.2025 12:16:27</div>
+                  </div>
+
+                  <div class="job-right">
+                    <!-- na screenshotu je tu u prvního řádku spíš prázdno -->
+                  </div>
+                </div>
+
+                <div class="job-row">
+                  <div class="job-left">
+                    <a class="stat-link gray" href="#">
+                      <span class="ico">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Zm0 3h16V8H4v1Zm3 6h5v-3H7v3Zm7-1h6v-2h-6v2Z"/>
+                        </svg>
+                      </span>
+                      Průběžné vypořádání
+                    </a>
+                    <div class="job-sub"><em>(zpětné výměny a bonusy v částkách)</em></div>
+                  </div>
+
+                  <div class="job-meta">
+                    <div class="lbl">Čas dokončení</div>
+                    <div class="val">22.01.2026 18:24:14</div>
+                    <a class="status-pill" href="#">Dokončeno</a>
+                  </div>
+
+                  <div class="job-right">
+                    <div class="muted">Čekající zpětné výměny: 0 (z toho vyřazených 0)</div>
+                    <div class="muted">Čekající bonusy: 0 (z toho vyřazených 0)</div>
+                    <div class="muted">Čekající nespárované vklady: 0</div>
+                  </div>
+                </div>
+
+                <div class="job-row">
+                  <div class="job-left">
+                    <a class="stat-link gray" href="#">
+                      <span class="ico">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Zm0 4h16V8H4v2Zm3 6h10v-2H7v2Z"/>
+                        </svg>
+                      </span>
+                      Karetní vypořádání (CZK)
+                    </a>
+                    <div class="job-sub"><em>(pracovní dny)</em></div>
+                  </div>
+
+                  <div class="job-meta">
+                    <div class="lbl">Naposledy provedeno</div>
+                    <div class="val">08.01.2026 20:49:38</div>
+                    <a class="status-pill" href="#">Dokončeno</a>
+                  </div>
+
+                  <div class="job-right">
+                    <div class="muted">Čekající uzávěrky: 0</div>
+                  </div>
+                </div>
+
+              </div>
+              <!-- /jobs -->
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById("hamburger").addEventListener("click", () => {
+      document.body.classList.toggle("sidebar-collapsed");
+    });
+
+    (function markActiveMenu(){
+      const path = (location.pathname || "/").toLowerCase();
+      const byPath = (a) => {
+        const href = (a.getAttribute("href") || "").toLowerCase();
+        if(!href || href === "#") return false;
+        return path === href || (path.startsWith(href.endsWith("/") ? href : href + "/"));
+      };
+
+      const links = Array.from(document.querySelectorAll(".menu a[href]"));
+      let active = links.find(byPath);
+
+      /* fallback: jsme na stránce “Statistiky a uzávěrky” */
+      if(!active){
+        active = links.find(a => a.getAttribute("data-nav") === "stats");
+      }
+
+      if(active) active.classList.add("active");
+    })();
+  </script>
+</body>
+</html>
