@@ -1,6 +1,25 @@
 ﻿"Admin - Výpis transakcí v systému"
 " "
 "RP ID";Párování;Zúčtováno;Částka;"ČÚ plátce";"Jméno plátce";"BÚ příjemce - číslo";"BÚ příjemce - název";"Zdrojová peněženka";"Cílová peněženka";VS;"Spec. s.";Komentář;"Typ pohybu";"Plat. systém"
+6135;;"25.01.2026, 15:53:48";"-17.9 Kč";;;;;"Pavel Černý";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6134;;"25.01.2026, 15:53:34";"-64.2 Kč";;;;;"Pavel Černý";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6133;;"25.01.2026, 15:51:07";"-40.5 Kč";;;;;"Pavel Černý";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6132;;"24.01.2026, 15:58:54";"-9 Kč";;;;;"Pavel Černý";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6131;;"24.01.2026, 15:48:16";"-50 Kč";;;;;"Pavel Černý";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6130;6130/6129;"23.01.2026, 17:28:03";"1 Kč";;;;;;"Jan Vyhnálek";;;;"Dobití RP";ano
+6128;;"23.01.2026, 15:55:50";"-40 Kč";;;;;"Jakub Studnička";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6127;6127/6126;"23.01.2026, 12:10:02";"1 Kč";;;;;;"Kostas Triandafilidis";;;;"Dobití RP";ano
+6129;;"23.01.2026, 17:27:03";"1 Kč";3171325014/3030;"Jan Vyhnálek";2600807384/2010;"SMSVYSLEDKY s.r.o. (ČNB)";;"Jan Vyhnálek";51880955;;"Jan Vyhnálek";;ne
+6126;;"23.01.2026, 12:09:03";"1 Kč";295721349/0300;"Kostas Triandafilidi";2600807384/2010;"SMSVYSLEDKY s.r.o. (ČNB)";;"Kostas Triandafilidis";63588413;;"Kostas Triandafilidi";;ne
+6124;;"22.01.2026, 17:07:16";"-40 Kč";;;;;"Jakub Studnička";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6123;;"22.01.2026, 17:01:42";"-39.9 Kč";;;;;"Jakub Studnička";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6122;;"22.01.2026, 17:00:11";"-39.9 Kč";;;;;"Jakub Studnička";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6121;;"22.01.2026, 16:59:48";"-39.9 Kč";;;;;"Jakub Studnička";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6120;6120/6119;"22.01.2026, 16:46:03";"40 Kč";;;;;;"Jakub Studnička";;;;"Dobití RP";ano
+6118;;"22.01.2026, 16:44:38";"-500.05 Kč";;;;;"Pavel Černý";;;;;"Karetní bezkontaktní platba v kamenném obchodě";ano
+6125;;"22.01.2026, 18:17:03";"-1 Kč";2600807384/2010;"SMSVYSLEDKY s.r.o. (ČNB)";;;;;;;"Platba vrácena z důvodu chybně zadané registrační platby.";;ne
+6119;;"22.01.2026, 16:45:03";"40 Kč";207860868/0600;"STUDNIČKA JAKUB";2600807384/2010;"SMSVYSLEDKY s.r.o. (ČNB)";;"Jakub Studnička";65202163;;"STUDNIČKA JAKUB";;ne
+6117;;"22.01.2026, 13:07:03";"1 Kč";1506542004/6363;"Přemysl Hodan";2600807384/2010;"SMSVYSLEDKY s.r.o. (ČNB)";;"Přemysl Hodan";14299350;;"Přemysl Hodan";;ne
 6116;6116/6115;"21.01.2026, 12:42:03";"700 Kč";;;;;;"Pavel Černý";;;;"Dobití RP";ano
 6114;6114/6113;"21.01.2026, 11:56:02";"0.36 Kč";;;;;;"Adam Děkan";;;;BONUS;ano
 6112;6112/6111;"21.01.2026, 11:54:03";"71.81 Kč";;;;;;"Ladislav Balon";;;;BONUS;ano
